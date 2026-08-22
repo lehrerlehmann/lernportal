@@ -3,12 +3,18 @@
 
 <head>
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
+
     <title>Img</title>
-    <link rel="stylesheet" href="../../../kurse.css">
+
+    <link
+        rel="stylesheet"
+        href="../../../kurse.css"
+    >
 </head>
 
 <body class="lp-index-page">
@@ -16,26 +22,55 @@
     <main class="lp-container">
 
         <nav class="lp-topbar">
-            <a class="lp-nav-back" href="../index.html">
-                &larr; Zur&uuml;ck
+
+            <a
+                class="lp-nav-back"
+                href="#"
+                onclick="history.back(); return false;"
+                aria-label="Zurück"
+            >
+                &larr;
             </a>
 
-            <div class="lp-search-wrap">
-                <input
-                    class="lp-search"
-                    id="lp-search"
-                    type="search"
-                    placeholder="Lerninhalte suchen ..."
-                    aria-label="Lerninhalte suchen"
-                >
+            <div class="lp-global-search">
+
+                <div class="lp-search-controls">
+
+                    <input
+                        class="lp-search"
+                        id="lp-search"
+                        type="search"
+                        placeholder="Lerninhalte suchen ..."
+                        aria-label="Lerninhalte suchen"
+                        autocomplete="off"
+                    >
+
+                    <button
+                        class="lp-search-button"
+                        id="lp-search-button"
+                        type="button"
+                        aria-label="Suche öffnen"
+                        title="Suchen"
+                    >
+                        &#128269;
+                    </button>
+
+                </div>
+
+                <div
+                    class="lp-search-results"
+                    id="lp-search-results"
+                    hidden
+                ></div>
+
             </div>
 
-            <a class="lp-nav-home" href="../../../index.html">
-                Lernportal
-            </a>
         </nav>
 
-        <nav class="lp-breadcrumb" aria-label="Pfad">
+        <nav
+            class="lp-breadcrumb"
+            aria-label="Pfad"
+        >
             <a href="../../../index.html">Lernportal</a><span class="lp-separator">&rsaquo;</span><a href="../../index.html">Klasse 9</a><span class="lp-separator">&rsaquo;</span><a href="../index.html">Lernbereich   Netzwerke</a><span class="lp-separator">&rsaquo;</span><a href="index.html">Img</a>
         </nav>
 
@@ -56,56 +91,193 @@
 
     </main>
 
-    
+
 <script>
-const searchInput = document.getElementById("lp-search");
 
-if (searchInput) {
-    searchInput.addEventListener("input", function () {
-        const query = this.value.trim().toLowerCase();
+const searchIndex = [{'title': 'Sprachen formalisier', 'url': '../../../klasse10/Lernbereich - Sprachen/sprachen_formalisier.html', 'location': 'Klasse 10 › Lernbereich   Sprachen'}];
 
-        document.querySelectorAll(".lp-section").forEach(section => {
-            let visiblePages = 0;
+const searchInput =
+    document.getElementById("lp-search");
 
-            section.querySelectorAll(".lp-card").forEach(card => {
-                const text = card.textContent.toLowerCase();
-                const visible = text.includes(query);
+const searchButton =
+    document.getElementById("lp-search-button");
 
-                card.style.display = visible ? "" : "none";
+const searchResults =
+    document.getElementById("lp-search-results");
 
-                if (visible) {
-                    visiblePages++;
-                }
-            });
 
-            const titleText = (
-                section.querySelector(".lp-section-title")?.textContent || ""
-            ).toLowerCase();
+function escapeHtml(value) {
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
 
-            const sectionTitleMatches = titleText.includes(query);
 
-            if (sectionTitleMatches && query !== "") {
-                section.querySelectorAll(".lp-card").forEach(card => {
-                    card.style.display = "";
-                });
-                visiblePages = 1;
+function renderSearchResults() {
+
+    const query =
+        searchInput.value
+            .trim()
+            .toLowerCase();
+
+    if (!query) {
+        searchResults.innerHTML = "";
+        searchResults.hidden = true;
+        return;
+    }
+
+    const matches =
+        searchIndex
+            .filter(item => {
+
+                const haystack =
+                    (
+                        item.title
+                        + " "
+                        + item.location
+                    ).toLowerCase();
+
+                return haystack.includes(query);
+
+            })
+            .slice(0, 15);
+
+
+    if (matches.length === 0) {
+
+        searchResults.innerHTML =
+            '<div class="lp-search-empty">'
+            + 'Keine Lerninhalte gefunden.'
+            + '</div>';
+
+        searchResults.hidden = false;
+
+        return;
+    }
+
+
+    searchResults.innerHTML =
+        matches
+            .map(item => {
+
+                const location =
+                    item.location
+                    ? (
+                        '<span class="lp-result-location">'
+                        + escapeHtml(item.location)
+                        + '</span>'
+                    )
+                    : '';
+
+                return (
+                    '<a class="lp-search-result" href="'
+                    + escapeHtml(item.url)
+                    + '">'
+                    + '<span class="lp-result-title">'
+                    + escapeHtml(item.title)
+                    + '</span>'
+                    + location
+                    + '</a>'
+                );
+
+            })
+            .join("");
+
+    searchResults.hidden = false;
+}
+
+
+if (
+    searchInput
+    && searchButton
+    && searchResults
+) {
+
+    searchButton.addEventListener(
+        "click",
+        function () {
+
+            const opened =
+                document.body.classList
+                    .contains("lp-search-open");
+
+            document.body.classList.toggle(
+                "lp-search-open",
+                !opened
+            );
+
+            if (!opened) {
+                searchInput.focus();
+                renderSearchResults();
+            }
+            else {
+                searchResults.hidden = true;
             }
 
-            section.style.display =
-                visiblePages > 0 || query === ""
-                    ? ""
-                    : "none";
-        });
+        }
+    );
 
-        document.querySelectorAll(".lp-menu > .lp-card").forEach(card => {
-            const text = card.textContent.toLowerCase();
-            card.style.display =
-                text.includes(query) ? "" : "none";
-        });
-    });
+
+    searchInput.addEventListener(
+        "input",
+        renderSearchResults
+    );
+
+
+    searchInput.addEventListener(
+        "keydown",
+        function (event) {
+
+            if (event.key === "Escape") {
+
+                document.body.classList.remove(
+                    "lp-search-open"
+                );
+
+                searchResults.hidden = true;
+                searchInput.blur();
+            }
+
+            if (
+                event.key === "Enter"
+                && !searchResults.hidden
+            ) {
+
+                const first =
+                    searchResults.querySelector(
+                        ".lp-search-result"
+                    );
+
+                if (first) {
+                    first.click();
+                }
+            }
+
+        }
+    );
+
+
+    document.addEventListener(
+        "click",
+        function (event) {
+
+            if (
+                !event.target.closest(
+                    ".lp-global-search"
+                )
+            ) {
+                searchResults.hidden = true;
+            }
+
+        }
+    );
+
 }
-</script>
 
+</script>
 
 </body>
 </html>

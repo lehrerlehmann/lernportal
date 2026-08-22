@@ -112,25 +112,31 @@ p {
    Obere Lernportal-Navigation
    ========================================================== */
 
+
 .lp-topbar {
-    display: grid;
-    grid-template-columns: auto minmax(180px, 420px) auto;
-    align-items: center;
-    gap: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+
     margin-bottom: 18px;
 }
 
 
-.lp-nav-back,
-.lp-nav-home {
+/* Zurück: bewusst quadratisch */
+
+.lp-nav-back {
     box-sizing: border-box;
 
-    min-height: 42px;
+    width: 42px;
+    height: 42px;
+
+    flex: 0 0 42px;
 
     display: flex;
     align-items: center;
+    justify-content: center;
 
-    padding: 0 13px;
+    padding: 0;
 
     border: 1px solid #e0e3e7;
     border-radius: 9px;
@@ -140,14 +146,12 @@ p {
     color: #4b5056;
     text-decoration: none;
 
-    font-size: 14px;
-
-    white-space: nowrap;
+    font-size: 19px;
+    line-height: 1;
 }
 
 
-.lp-nav-back:hover,
-.lp-nav-home:hover {
+.lp-nav-back:hover {
     color: dodgerblue;
 
     border-color: #b8d8ff;
@@ -156,21 +160,39 @@ p {
 }
 
 
-.lp-search-wrap {
-    width: 100%;
+/* ==========================================================
+   Globale Suche
+   ========================================================== */
+
+.lp-global-search {
+    position: relative;
+
+    margin-left: auto;
+
+    width: min(100%, 500px);
+}
+
+
+.lp-search-controls {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
 }
 
 
 .lp-search {
     box-sizing: border-box;
 
-    width: 100%;
+    width: 0;
+    min-width: 0;
     height: 42px;
 
-    padding: 0 15px;
+    padding: 0;
 
-    border: 1px solid #dfe2e6;
+    border: 0 solid transparent;
     border-radius: 9px;
+
+    opacity: 0;
 
     background: #ffffff;
     color: #202124;
@@ -179,6 +201,24 @@ p {
     font-size: 14px;
 
     outline: none;
+
+    transition:
+        width 0.18s ease,
+        opacity 0.18s ease,
+        padding 0.18s ease,
+        border-width 0.18s ease;
+}
+
+
+.lp-search-open .lp-search {
+    width: 100%;
+
+    padding: 0 14px;
+
+    border-width: 1px;
+    border-color: #dfe2e6;
+
+    opacity: 1;
 }
 
 
@@ -196,19 +236,129 @@ p {
 }
 
 
+/* Quadratischer Suchbutton */
+
+.lp-search-button {
+    box-sizing: border-box;
+
+    width: 42px;
+    height: 42px;
+
+    flex: 0 0 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: 1px solid #e0e3e7;
+    border-radius: 9px;
+
+    background: #ffffff;
+    color: #4b5056;
+
+    font-size: 17px;
+    line-height: 1;
+
+    cursor: pointer;
+}
+
+
+.lp-search-button:hover {
+    color: dodgerblue;
+
+    border-color: #b8d8ff;
+
+    background: #fbfdff;
+}
+
+
+/* ==========================================================
+   Trefferliste
+   ========================================================== */
+
+.lp-search-results {
+    position: absolute;
+
+    top: 50px;
+    right: 0;
+
+    z-index: 100;
+
+    width: 100%;
+
+    max-height: 430px;
+
+    overflow-y: auto;
+
+    box-sizing: border-box;
+
+    padding: 7px;
+
+    background: #ffffff;
+
+    border: 1px solid #e0e3e7;
+    border-radius: 12px;
+
+    box-shadow:
+        0 12px 30px
+        rgba(0, 0, 0, 0.10);
+}
+
+
+.lp-search-result {
+    display: flex;
+    flex-direction: column;
+
+    gap: 3px;
+
+    padding: 11px 12px;
+
+    border-radius: 8px;
+
+    color: #202124;
+
+    text-decoration: none;
+}
+
+
+.lp-search-result:hover {
+    background: #f4f7fa;
+}
+
+
+.lp-result-title {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+
+.lp-result-location {
+    color: #8a8f96;
+
+    font-size: 12px;
+}
+
+
+.lp-search-empty {
+    padding: 14px 12px;
+
+    color: #858a91;
+
+    font-size: 14px;
+}
+
+
 @media (max-width: 650px) {
 
-    .lp-topbar {
-        grid-template-columns: auto 1fr;
+    .lp-global-search {
+        width: 100%;
     }
 
-    .lp-search-wrap {
-        grid-column: 1 / -1;
-        grid-row: 2;
-    }
-
-    .lp-nav-home {
-        justify-self: end;
+    .lp-search-results {
+        width: calc(100vw - 24px);
+        max-width: 500px;
     }
 
 }
