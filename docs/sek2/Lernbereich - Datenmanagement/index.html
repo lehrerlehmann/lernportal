@@ -3,64 +3,109 @@
 
 <head>
     <meta charset="UTF-8">
-
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
-
     <title>Lernbereich   Datenmanagement</title>
-
-    <link
-        rel="stylesheet"
-        href="../../kurse.css"
-    >
+    <link rel="stylesheet" href="../../kurse.css">
 </head>
 
 <body class="lp-index-page">
 
     <main class="lp-container">
 
-        <nav
-            class="lp-breadcrumb"
-            aria-label="Navigation"
-        >
+        <nav class="lp-topbar">
+            <a class="lp-nav-back" href="../index.html">
+                &larr; Zur&uuml;ck
+            </a>
+
+            <div class="lp-search-wrap">
+                <input
+                    class="lp-search"
+                    id="lp-search"
+                    type="search"
+                    placeholder="Lerninhalte suchen ..."
+                    aria-label="Lerninhalte suchen"
+                >
+            </div>
+
+            <a class="lp-nav-home" href="../../index.html">
+                Lernportal
+            </a>
+        </nav>
+
+        <nav class="lp-breadcrumb" aria-label="Pfad">
             <a href="../../index.html">Lernportal</a><span class="lp-separator">&rsaquo;</span><a href="../index.html">Sekundarstufe II</a><span class="lp-separator">&rsaquo;</span><a href="index.html">Lernbereich   Datenmanagement</a>
         </nav>
 
         <header class="lp-header">
-
-            <h1>
-                Lernbereich   Datenmanagement
-            </h1>
-
-            <p>
-                Wähle einen Lernbereich oder eine Lernseite aus.
-            </p>
-
+            <h1>Lernbereich   Datenmanagement</h1>
         </header>
 
         <section class="lp-menu">
-
             
-<a class="lp-card lp-folder" href="img/">
-    <span class="lp-card-text">
-        <span class="lp-card-title">
-            Img
-        </span>
-
+<div class="lp-empty">
+    <span class="lp-empty-title">Noch keine Lerninhalte</span>
+    <span class="lp-empty-text">
+        In diesem Bereich sind aktuell noch keine Seiten hinterlegt.
     </span>
-
-    <span class="lp-arrow">
-        &rarr;
-    </span>
-</a>
-
+</div>
 
         </section>
 
     </main>
 
-</body>
+    
+<script>
+const searchInput = document.getElementById("lp-search");
 
+if (searchInput) {
+    searchInput.addEventListener("input", function () {
+        const query = this.value.trim().toLowerCase();
+
+        document.querySelectorAll(".lp-section").forEach(section => {
+            let visiblePages = 0;
+
+            section.querySelectorAll(".lp-card").forEach(card => {
+                const text = card.textContent.toLowerCase();
+                const visible = text.includes(query);
+
+                card.style.display = visible ? "" : "none";
+
+                if (visible) {
+                    visiblePages++;
+                }
+            });
+
+            const titleText = (
+                section.querySelector(".lp-section-title")?.textContent || ""
+            ).toLowerCase();
+
+            const sectionTitleMatches = titleText.includes(query);
+
+            if (sectionTitleMatches && query !== "") {
+                section.querySelectorAll(".lp-card").forEach(card => {
+                    card.style.display = "";
+                });
+                visiblePages = 1;
+            }
+
+            section.style.display =
+                visiblePages > 0 || query === ""
+                    ? ""
+                    : "none";
+        });
+
+        document.querySelectorAll(".lp-menu > .lp-card").forEach(card => {
+            const text = card.textContent.toLowerCase();
+            card.style.display =
+                text.includes(query) ? "" : "none";
+        });
+    });
+}
+</script>
+
+
+</body>
 </html>

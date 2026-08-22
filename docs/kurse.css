@@ -106,6 +106,114 @@ p {
 }
 
 
+
+
+/* ==========================================================
+   Obere Lernportal-Navigation
+   ========================================================== */
+
+.lp-topbar {
+    display: grid;
+    grid-template-columns: auto minmax(180px, 420px) auto;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+
+.lp-nav-back,
+.lp-nav-home {
+    box-sizing: border-box;
+
+    min-height: 42px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 13px;
+
+    border: 1px solid #e0e3e7;
+    border-radius: 9px;
+
+    background: #ffffff;
+
+    color: #4b5056;
+    text-decoration: none;
+
+    font-size: 14px;
+
+    white-space: nowrap;
+}
+
+
+.lp-nav-back:hover,
+.lp-nav-home:hover {
+    color: dodgerblue;
+
+    border-color: #b8d8ff;
+
+    background: #fbfdff;
+}
+
+
+.lp-search-wrap {
+    width: 100%;
+}
+
+
+.lp-search {
+    box-sizing: border-box;
+
+    width: 100%;
+    height: 42px;
+
+    padding: 0 15px;
+
+    border: 1px solid #dfe2e6;
+    border-radius: 9px;
+
+    background: #ffffff;
+    color: #202124;
+
+    font: inherit;
+    font-size: 14px;
+
+    outline: none;
+}
+
+
+.lp-search:focus {
+    border-color: dodgerblue;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(30, 144, 255, 0.10);
+}
+
+
+.lp-search::placeholder {
+    color: #969ba1;
+}
+
+
+@media (max-width: 650px) {
+
+    .lp-topbar {
+        grid-template-columns: auto 1fr;
+    }
+
+    .lp-search-wrap {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    .lp-nav-home {
+        justify-self: end;
+    }
+
+}
+
+
 /* ==========================================================
    Breadcrumb
    ========================================================== */
@@ -196,6 +304,45 @@ p {
         );
 
     gap: 16px;
+}
+
+
+
+.lp-section {
+    grid-column: 1 / -1;
+    margin-bottom: 24px;
+}
+
+.lp-section-title {
+    margin: 0 0 14px 2px;
+    padding-bottom: 9px;
+    border-bottom: 1px solid #dde1e5;
+    color: #30343a;
+    font-size: 22px;
+    font-weight: 650;
+}
+
+.lp-section-pages {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.lp-section-empty {
+    color: #858a91;
+    font-size: 14px;
+    padding: 8px 2px;
+}
+
+.lp-disabled {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+@media (max-width: 720px) {
+    .lp-section-pages {
+        grid-template-columns: 1fr;
+    }
 }
 
 
