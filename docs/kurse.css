@@ -69,177 +69,461 @@ p {
  span.inline-color-wrapper{background:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyIDIiPjxwYXRoIGZpbGw9ImdyYXkiIGQ9Ik0wIDBoMnYySDB6Ii8+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0wIDBoMXYxSDB6TTEgMWgxdjFIMXoiLz48L3N2Zz4=);background-position:center;background-size:110%;display:inline-block;height:1.333ch;width:1.333ch;margin:0 .333ch;box-sizing:border-box;border:1px solid #fff;outline:1px solid rgba(0,0,0,.5);overflow:hidden}span.inline-color{display:block;height:120%;width:120%}
  
 
+
 /* ==========================================================
-   Lernportal Navigation
+   LERNPORTAL
+   ========================================================== */
+
+
+/* ==========================================================
+   Grundlayout der Menüseiten
    ========================================================== */
 
 .lp-index-page {
     margin: 0;
-    background: #f7f8fa;
-    color: #202124;
-    font-family: Arial, Helvetica, sans-serif;
+
+    background: #f6f7f9;
+    color: #1f2328;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
 }
+
 
 .lp-container {
-    width: min(850px, calc(100% - 40px));
-    margin: 50px auto;
+    width: min(
+        980px,
+        calc(100% - 40px)
+    );
+
+    margin:
+        48px
+        auto
+        70px
+        auto;
 }
 
-.lp-header {
-    margin: 25px 0 30px 0;
-}
 
-.lp-header h1 {
-    margin: 0;
-    color: #202124;
-    font-size: clamp(30px, 5vw, 46px);
-    font-weight: 650;
-    letter-spacing: -0.03em;
-}
+/* ==========================================================
+   Breadcrumb
+   ========================================================== */
 
 .lp-breadcrumb {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
     align-items: center;
+
+    gap: 8px;
+
+    margin-bottom: 22px;
+
     font-size: 14px;
-    margin-bottom: 18px;
+    color: #7a7f87;
 }
 
+
 .lp-breadcrumb a {
-    color: #5f6368;
+    color: #6a7078;
+
     text-decoration: none;
 }
+
 
 .lp-breadcrumb a:hover {
     color: dodgerblue;
 }
 
+
 .lp-separator {
-    color: #a5a8ad;
-}
-
-.lp-menu {
-    display: grid;
-    gap: 12px;
-}
-
-.lp-card {
-    box-sizing: border-box;
-    width: 100%;
-    min-height: 78px;
-    padding: 17px 20px;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    background: white;
-
-    border: 1px solid #dedfe2;
-    border-radius: 10px;
-
-    color: #202124;
-    text-decoration: none;
-
-    transition:
-        border-color 0.15s ease,
-        transform 0.15s ease,
-        box-shadow 0.15s ease;
-}
-
-.lp-card:hover {
-    border-color: dodgerblue;
-    transform: translateY(-1px);
-    box-shadow: 0 3px 12px rgba(0,0,0,0.06);
-}
-
-.lp-card-text {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.lp-card-title {
-    font-size: 18px;
-    font-weight: 600;
-}
-
-.lp-card-subtitle {
-    color: #777b80;
-    font-size: 13px;
-}
-
-.lp-arrow {
-    color: #8a8d91;
-    font-size: 23px;
-    margin-left: 20px;
-}
-
-.lp-card:hover .lp-arrow {
-    color: dodgerblue;
-}
-
-.lp-empty {
-    color: #777b80;
+    color: #b3b7bd;
 }
 
 
 /* ==========================================================
-   Eingespritzte Navbar auf Lernseiten
+   Kopfbereich
+   ========================================================== */
+
+.lp-header {
+    margin-bottom: 34px;
+}
+
+
+.lp-header h1 {
+    margin:
+        0
+        0
+        10px
+        0;
+
+    color: #1f2328;
+
+    font-size:
+        clamp(
+            32px,
+            5vw,
+            48px
+        );
+
+    font-weight: 700;
+
+    letter-spacing: -0.035em;
+}
+
+
+.lp-header p {
+    margin: 0;
+
+    max-width: 700px;
+
+    color: #70757d;
+
+    font-size: 16px;
+
+    line-height: 1.6;
+
+    padding: 0;
+}
+
+
+/* ==========================================================
+   Menü-Grid
+   ========================================================== */
+
+.lp-menu {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(0, 1fr)
+        );
+
+    gap: 16px;
+}
+
+
+/* ==========================================================
+   Menü-Karten
+   ========================================================== */
+
+.lp-card {
+    box-sizing: border-box;
+
+    min-height: 105px;
+
+    padding:
+        22px
+        24px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    background: #ffffff;
+
+    border:
+        1px
+        solid
+        #e0e3e7;
+
+    border-radius: 14px;
+
+    color: #1f2328;
+
+    text-decoration: none;
+
+    transition:
+        transform 0.15s ease,
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        background-color 0.15s ease;
+}
+
+
+.lp-card:hover {
+    transform: translateY(-2px);
+
+    border-color: #b8d8ff;
+
+    box-shadow:
+        0
+        8px
+        24px
+        rgba(0, 0, 0, 0.07);
+
+    background: #fbfdff;
+}
+
+
+.lp-card-text {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 7px;
+
+    min-width: 0;
+}
+
+
+.lp-card-title {
+    color: #202124;
+
+    font-size: 19px;
+
+    font-weight: 650;
+
+    line-height: 1.25;
+}
+
+
+.lp-card-subtitle {
+    color: #8a8f96;
+
+    font-size: 13px;
+
+    line-height: 1.4;
+}
+
+
+/* ==========================================================
+   Pfeil rechts
+   ========================================================== */
+
+.lp-arrow {
+    flex:
+        0
+        0
+        auto;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    width: 36px;
+    height: 36px;
+
+    border-radius: 50%;
+
+    background: #f1f3f5;
+
+    color: #777c82;
+
+    font-size: 20px;
+
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease,
+        transform 0.15s ease;
+}
+
+
+.lp-card:hover .lp-arrow {
+    background: #e7f2ff;
+
+    color: dodgerblue;
+
+    transform:
+        translateX(2px);
+}
+
+
+/* ==========================================================
+   Lernbereiche
+   ========================================================== */
+
+.lp-folder {
+    border-left:
+        4px
+        solid
+        dodgerblue;
+}
+
+
+/* ==========================================================
+   Einzelne Lernseiten
+   ========================================================== */
+
+.lp-page {
+    border-left:
+        4px
+        solid
+        #c9ccd1;
+}
+
+
+/* ==========================================================
+   Leere Bereiche
+   ========================================================== */
+
+.lp-empty {
+    grid-column:
+        1 / -1;
+
+    box-sizing: border-box;
+
+    padding: 28px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 7px;
+
+    background: #ffffff;
+
+    border:
+        1px
+        dashed
+        #cfd3d8;
+
+    border-radius: 14px;
+
+    text-align: center;
+}
+
+
+.lp-empty-title {
+    color: #44484e;
+
+    font-size: 17px;
+
+    font-weight: 600;
+}
+
+
+.lp-empty-text {
+    color: #858a91;
+
+    font-size: 14px;
+}
+
+
+/* ==========================================================
+   Navbar auf Lernseiten
    ========================================================== */
 
 .lp-navbar {
     box-sizing: border-box;
 
     width: 100%;
-    min-height: 52px;
 
-    margin: 0 0 24px 0;
-    padding: 8px 14px;
+    min-height: 54px;
+
+    margin:
+        0
+        0
+        28px
+        0;
+
+    padding:
+        9px
+        12px;
 
     display: flex;
+
     align-items: center;
     justify-content: space-between;
-    gap: 15px;
+
+    gap: 16px;
 
     background: #ffffff;
 
-    border: 1px solid #dedfe2;
-    border-radius: 8px;
+    border:
+        1px
+        solid
+        #e0e3e7;
 
-    font-family: Arial, Helvetica, sans-serif;
+    border-radius: 10px;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
     font-size: 14px;
 }
 
+
 .lp-navbar a {
-    color: #3c4043;
+    color: #444a50;
+
     text-decoration: none;
-    padding: 7px 10px;
-    border-radius: 6px;
+
+    padding:
+        8px
+        11px;
+
+    border-radius: 7px;
+
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
 }
 
+
 .lp-navbar a:hover {
-    background: #f1f3f4;
+    background: #f1f3f5;
+
     color: dodgerblue;
 }
 
+
 .lp-home {
-    color: #777b80 !important;
+    color: #777c82 !important;
 }
 
-@media (max-width: 600px) {
+
+/* ==========================================================
+   Mobile Darstellung
+   ========================================================== */
+
+@media (max-width: 720px) {
 
     .lp-container {
-        width: min(100% - 24px, 850px);
-        margin: 25px auto;
+        width:
+            min(
+                calc(100% - 24px),
+                980px
+            );
+
+        margin:
+            28px
+            auto
+            50px
+            auto;
     }
+
+
+    .lp-menu {
+        grid-template-columns: 1fr;
+    }
+
 
     .lp-card {
-        padding: 15px;
+        min-height: 90px;
+
+        padding: 18px;
     }
 
+
     .lp-card-title {
-        font-size: 16px;
+        font-size: 17px;
+    }
+
+
+    .lp-header {
+        margin-bottom: 26px;
+    }
+
+
+    .lp-navbar {
+        margin-bottom: 20px;
     }
 }
