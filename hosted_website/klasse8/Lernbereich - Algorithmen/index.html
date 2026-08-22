@@ -3,18 +3,12 @@
 
 <head>
     <meta charset="UTF-8">
-
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
-
     <title>Lernbereich   Algorithmen</title>
-
-    <link
-        rel="stylesheet"
-        href="../../kurse.css"
-    >
+    <link rel="stylesheet" href="../../kurse.css">
 </head>
 
 <body class="lp-index-page">
@@ -28,14 +22,13 @@
                 href="#"
                 onclick="history.back(); return false;"
                 aria-label="Zurück"
+                title="Zurück"
             >
                 &larr;
             </a>
 
             <div class="lp-global-search">
-
                 <div class="lp-search-controls">
-
                     <input
                         class="lp-search"
                         id="lp-search"
@@ -44,17 +37,15 @@
                         aria-label="Lerninhalte suchen"
                         autocomplete="off"
                     >
-
                     <button
                         class="lp-search-button"
                         id="lp-search-button"
                         type="button"
-                        aria-label="Suche öffnen"
+                        aria-label="Suchen"
                         title="Suchen"
                     >
                         &#128269;
                     </button>
-
                 </div>
 
                 <div
@@ -62,7 +53,6 @@
                     id="lp-search-results"
                     hidden
                 ></div>
-
             </div>
 
         </nav>
@@ -91,20 +81,12 @@
 
     </main>
 
-
 <script>
+const searchIndex = [{"title": "Sprachen formalisier", "url": "../../klasse10/Lernbereich - Sprachen/sprachen_formalisier.html", "location": "Klasse 10 › Lernbereich   Sprachen"}];
 
-const searchIndex = [{'title': 'Sprachen formalisier', 'url': '../../klasse10/Lernbereich - Sprachen/sprachen_formalisier.html', 'location': 'Klasse 10 › Lernbereich   Sprachen'}];
-
-const searchInput =
-    document.getElementById("lp-search");
-
-const searchButton =
-    document.getElementById("lp-search-button");
-
-const searchResults =
-    document.getElementById("lp-search-results");
-
+const searchInput = document.getElementById("lp-search");
+const searchButton = document.getElementById("lp-search-button");
+const searchResults = document.getElementById("lp-search-results");
 
 function escapeHtml(value) {
     return String(value)
@@ -115,13 +97,8 @@ function escapeHtml(value) {
         .replaceAll("'", "&#039;");
 }
 
-
 function renderSearchResults() {
-
-    const query =
-        searchInput.value
-            .trim()
-            .toLowerCase();
+    const query = searchInput.value.trim().toLowerCase();
 
     if (!query) {
         searchResults.innerHTML = "";
@@ -129,154 +106,76 @@ function renderSearchResults() {
         return;
     }
 
-    const matches =
-        searchIndex
-            .filter(item => {
+    const matches = searchIndex
+        .filter(item => {
+            const haystack = (
+                item.title + " " + item.location
+            ).toLowerCase();
 
-                const haystack =
-                    (
-                        item.title
-                        + " "
-                        + item.location
-                    ).toLowerCase();
-
-                return haystack.includes(query);
-
-            })
-            .slice(0, 15);
-
+            return haystack.includes(query);
+        })
+        .slice(0, 15);
 
     if (matches.length === 0) {
-
         searchResults.innerHTML =
-            '<div class="lp-search-empty">'
-            + 'Keine Lerninhalte gefunden.'
-            + '</div>';
-
+            '<div class="lp-search-empty">Keine Lerninhalte gefunden.</div>';
         searchResults.hidden = false;
-
         return;
     }
 
-
-    searchResults.innerHTML =
-        matches
-            .map(item => {
-
-                const location =
-                    item.location
-                    ? (
-                        '<span class="lp-result-location">'
-                        + escapeHtml(item.location)
-                        + '</span>'
-                    )
-                    : '';
-
-                return (
-                    '<a class="lp-search-result" href="'
-                    + escapeHtml(item.url)
-                    + '">'
-                    + '<span class="lp-result-title">'
-                    + escapeHtml(item.title)
+    searchResults.innerHTML = matches
+        .map(item => {
+            const location = item.location
+                ? '<span class="lp-result-location">'
+                    + escapeHtml(item.location)
                     + '</span>'
-                    + location
-                    + '</a>'
-                );
+                : '';
 
-            })
-            .join("");
+            return (
+                '<a class="lp-search-result" href="'
+                + escapeHtml(item.url)
+                + '">'
+                + '<span class="lp-result-title">'
+                + escapeHtml(item.title)
+                + '</span>'
+                + location
+                + '<span class="lp-result-arrow">&rarr;</span>'
+                + '</a>'
+            );
+        })
+        .join("");
 
     searchResults.hidden = false;
 }
 
+if (searchInput && searchButton && searchResults) {
+    searchInput.addEventListener("input", renderSearchResults);
 
-if (
-    searchInput
-    && searchButton
-    && searchResults
-) {
+    searchButton.addEventListener("click", function () {
+        searchInput.focus();
+        renderSearchResults();
+    });
 
-    searchButton.addEventListener(
-        "click",
-        function () {
-
-            const opened =
-                document.body.classList
-                    .contains("lp-search-open");
-
-            document.body.classList.toggle(
-                "lp-search-open",
-                !opened
-            );
-
-            if (!opened) {
-                searchInput.focus();
-                renderSearchResults();
-            }
-            else {
-                searchResults.hidden = true;
-            }
-
+    searchInput.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+            searchResults.hidden = true;
+            searchInput.blur();
         }
-    );
 
-
-    searchInput.addEventListener(
-        "input",
-        renderSearchResults
-    );
-
-
-    searchInput.addEventListener(
-        "keydown",
-        function (event) {
-
-            if (event.key === "Escape") {
-
-                document.body.classList.remove(
-                    "lp-search-open"
-                );
-
-                searchResults.hidden = true;
-                searchInput.blur();
+        if (event.key === "Enter" && !searchResults.hidden) {
+            const first = searchResults.querySelector(".lp-search-result");
+            if (first) {
+                first.click();
             }
-
-            if (
-                event.key === "Enter"
-                && !searchResults.hidden
-            ) {
-
-                const first =
-                    searchResults.querySelector(
-                        ".lp-search-result"
-                    );
-
-                if (first) {
-                    first.click();
-                }
-            }
-
         }
-    );
+    });
 
-
-    document.addEventListener(
-        "click",
-        function (event) {
-
-            if (
-                !event.target.closest(
-                    ".lp-global-search"
-                )
-            ) {
-                searchResults.hidden = true;
-            }
-
+    document.addEventListener("click", function (event) {
+        if (!event.target.closest(".lp-global-search")) {
+            searchResults.hidden = true;
         }
-    );
-
+    });
 }
-
 </script>
 
 </body>
