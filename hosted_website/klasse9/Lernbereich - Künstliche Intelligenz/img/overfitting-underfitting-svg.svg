@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200">
+  <!-- Underfitting -->
+  <g transform="translate(0,0)">
+    <rect x="10" y="10" width="180" height="180" fill="#f0f0f0" stroke="#000000" stroke-width="1"/>
+    <circle cx="30" cy="160" r="3" fill="blue"/>
+    <circle cx="60" cy="140" r="3" fill="blue"/>
+    <circle cx="90" cy="80" r="3" fill="blue"/>
+    <circle cx="120" cy="60" r="3" fill="blue"/>
+    <circle cx="150" cy="20" r="3" fill="blue"/>
+    <path d="M 20 140 L 170 60" stroke="red" stroke-width="2" fill="none"/>
+    <text x="100" y="185" font-family="Arial" font-size="14" text-anchor="middle">Underfitting</text>
+  </g>
+  
+  <!-- Good Fit -->
+  <g transform="translate(200,0)">
+    <rect x="10" y="10" width="180" height="180" fill="#f0f0f0" stroke="#000000" stroke-width="1"/>
+    <circle cx="30" cy="160" r="3" fill="blue"/>
+    <circle cx="60" cy="140" r="3" fill="blue"/>
+    <circle cx="90" cy="80" r="3" fill="blue"/>
+    <circle cx="120" cy="60" r="3" fill="blue"/>
+    <circle cx="150" cy="20" r="3" fill="blue"/>
+    <path d="M 20 170 Q 60 150 90 80 Q 120 10 180 10" stroke="red" stroke-width="2" fill="none"/>
+    <text x="100" y="185" font-family="Arial" font-size="14" text-anchor="middle">Gute Anpassung</text>
+  </g>
+  
+  <!-- Overfitting -->
+  <g transform="translate(400,0)">
+    <rect x="10" y="10" width="180" height="180" fill="#f0f0f0" stroke="#000000" stroke-width="1"/>
+    <circle cx="30" cy="160" r="3" fill="blue"/>
+    <circle cx="60" cy="140" r="3" fill="blue"/>
+    <circle cx="90" cy="80" r="3" fill="blue"/>
+    <circle cx="120" cy="60" r="3" fill="blue"/>
+    <circle cx="150" cy="20" r="3" fill="blue"/>
+    <path d="M 20 160 C 30 160 40 140 60 140 C 80 140 85 80 90 80 C 95 80 100 60 120 60 C 140 60 120 8 180 20" stroke="red" stroke-width="2" fill="none"/>
+    <text x="100" y="185" font-family="Arial" font-size="14" text-anchor="middle">Overfitting</text>
+  </g>
+</svg>
