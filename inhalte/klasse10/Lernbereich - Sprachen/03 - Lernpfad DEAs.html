@@ -11,9 +11,12 @@
   --ink:#151515;
   --muted:#666;
   --line:#d7d7d1;
-  --accent:#dfead6;
-  --accent-strong:#8fa67d;
+  --accent:#dce8d4;
+  --accent-strong:#6f8568;
   --soft:#efefe9;
+  --accent-warm:#f3ead8;
+  --accent-blue:#dfe9ef;
+  --accent-rose:#eee1df;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;font-family:Bahnschrift, "Aptos", "Segoe UI", Arial, sans-serif;background:#111;color:var(--ink)}
@@ -39,6 +42,15 @@ p{margin:.5em 0}
   padding:1.5vw 1.6vw;
 }
 .card.soft{background:var(--soft)}
+
+.card.accent-green{background:var(--accent)}
+.card.accent-warm{background:var(--accent-warm)}
+.card.accent-blue{background:var(--accent-blue)}
+.card.accent-rose{background:var(--accent-rose)}
+.graph-svg .state-fill-green{fill:var(--accent)}
+.graph-svg .state-fill-warm{fill:var(--accent-warm)}
+.graph-svg .state-fill-blue{fill:var(--accent-blue)}
+
 .symbol{font-size:clamp(34px,3vw,54px);font-weight:500;margin-bottom:.6vh}
 .small{font-size:clamp(14px,1.05vw,18px);color:var(--muted)}
 .rule{
@@ -171,9 +183,9 @@ p{margin:.5em 0}
       <div class="rule">Eine Zeichenkette wird akzeptiert, wenn der DEA nach dem letzten Zeichen in einem <b>Endzustand</b> steht.</div>
     </div>
     <div class="grid-3" style="grid-template-columns:1fr">
-      <div class="card"><div class="symbol">Z</div><h2>Zustände</h2><p class="small">Beschreiben, in welcher Situation sich der Automat gerade befindet.</p></div>
-      <div class="card"><div class="symbol">Σ</div><h2>Alphabet</h2><p class="small">Alle Zeichen oder Eingaben, die der Automat lesen kann.</p></div>
-      <div class="card"><div class="symbol">δ</div><h2>Übergänge</h2><p class="small">Regeln, die für jede Eingabe den nächsten Zustand festlegen.</p></div>
+      <div class="card accent-green"><div class="symbol">Z</div><h2>Zustände</h2><p class="small">Beschreiben, in welcher Situation sich der Automat gerade befindet.</p></div>
+      <div class="card accent-blue"><div class="symbol">Σ</div><h2>Alphabet</h2><p class="small">Alle Zeichen oder Eingaben, die der Automat lesen kann.</p></div>
+      <div class="card accent-warm"><div class="symbol">δ</div><h2>Übergänge</h2><p class="small">Regeln, die für jede Eingabe den nächsten Zustand festlegen.</p></div>
     </div>
   </div>
   <div class="legend">
@@ -200,14 +212,16 @@ p{margin:.5em 0}
         <path class="transition" d="M35 215 H105" marker-end="url(#arrowMusic)"></path>
 
         <!-- Zustände -->
-        <circle class="state-circle" cx="165" cy="215" r="52"></circle>
+        <circle class="state-circle state-fill-green" cx="165" cy="215" r="52"></circle>
+        <circle class="end-circle" cx="165" cy="215" r="44"></circle>
         <text class="state-label" x="165" y="215">Stopp</text>
 
-        <circle class="state-circle" cx="480" cy="120" r="52"></circle>
+        <circle class="state-circle state-fill-blue" cx="480" cy="120" r="52"></circle>
         <circle class="end-circle" cx="480" cy="120" r="44"></circle>
         <text class="state-label" x="480" y="120">Play</text>
 
-        <circle class="state-circle" cx="480" cy="310" r="52"></circle>
+        <circle class="state-circle state-fill-warm" cx="480" cy="310" r="52"></circle>
+        <circle class="end-circle" cx="480" cy="310" r="44"></circle>
         <text class="state-label" x="480" y="310">Pause</text>
 
         <!-- Stopp -> Play -->
@@ -247,6 +261,7 @@ p{margin:.5em 0}
         <li>Es gibt genau einen Startzustand.</li>
         <li>Von jedem Zustand geht für <b>P</b> genau eine Kante und für <b>S</b> genau eine Kante aus.</li>
         <li>Damit gibt es bei jeder Eingabe immer genau einen möglichen Weg.</li>
+        <li>Alle drei Zustände sind hier Endzustände.</li>
       </ol>
     </div>
   </div>
