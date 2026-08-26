@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deterministische endliche Automaten (DEA)</title>
+<style>
+:root{
+  --bg:#f7f7f4;
+  --paper:#ffffff;
+  --ink:#151515;
+  --muted:#666;
+  --line:#d7d7d1;
+  --accent:#dfead6;
+  --accent-strong:#8fa67d;
+  --soft:#efefe9;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font-family:Bahnschrift, "Aptos", "Segoe UI", Arial, sans-serif;background:#111;color:var(--ink)}
+body{overflow:hidden}
+.deck{height:100%;width:100%;position:relative}
+.slide{
+  display:none;
+  width:100vw;height:100vh;
+  background:var(--bg);
+  padding:5.8vh 6.3vw 5vh;
+  position:absolute;inset:0;
+}
+.slide.active{display:block}
+.kicker{font-size:1rem;letter-spacing:.14em;font-weight:700;color:#6b7963;margin-bottom:1.1vh}
+h1{font-weight:400;font-size:clamp(38px,4vw,72px);line-height:1.02;margin:0 0 4.7vh}
+h2{font-weight:500;font-size:clamp(23px,2.4vw,40px);margin:0 0 1.8vh}
+p,li{font-size:clamp(16px,1.36vw,24px);line-height:1.42}
+p{margin:.5em 0}
+.grid-2{display:grid;grid-template-columns:1.12fr .88fr;gap:5vw;align-items:start}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.7vw}
+.card{
+  background:var(--paper);border:1px solid var(--line);border-radius:22px;
+  padding:1.5vw 1.6vw;
+}
+.card.soft{background:var(--soft)}
+.symbol{font-size:clamp(34px,3vw,54px);font-weight:500;margin-bottom:.6vh}
+.small{font-size:clamp(14px,1.05vw,18px);color:var(--muted)}
+.rule{
+  margin-top:2.5vh;padding:1.25vw 1.55vw;border-left:7px solid var(--accent-strong);
+  background:var(--paper);border-radius:0 16px 16px 0;font-weight:600
+}
+.legend{display:flex;gap:2vw;align-items:center;flex-wrap:wrap;margin-top:1.5vh}
+.legend-item{display:flex;align-items:center;gap:.7vw;font-size:clamp(14px,1vw,18px)}
+.node{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:72px;height:72px;border:2px solid #111;border-radius:50%;background:#fff;
+  font-size:20px;position:relative
+}
+.node.end:after{
+  content:"";position:absolute;inset:5px;border:2px solid #111;border-radius:50%;
+}
+.arrow{font-size:34px;line-height:1}
+.example-layout{display:grid;grid-template-columns:1.35fr .65fr;gap:4vw;align-items:center}
+.graph{
+  height:47vh;min-height:360px;background:#fff;border:1px solid var(--line);
+  border-radius:24px;overflow:hidden;padding:1.4vw;
+}
+.graph svg,.tree svg{width:100%;height:100%;display:block}
+.graph-svg text,.tree-svg text{font-family:Bahnschrift,"Aptos","Segoe UI",Arial,sans-serif;fill:#151515}
+.graph-svg .state-circle,.tree-svg .state-circle{fill:#fff;stroke:#151515;stroke-width:2.2}
+.graph-svg .end-circle,.tree-svg .end-circle{fill:none;stroke:#151515;stroke-width:2}
+.graph-svg .transition,.tree-svg .transition{fill:none;stroke:#151515;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
+.graph-svg .edge-label-bg,.tree-svg .edge-label-bg{fill:#fff}
+.graph-svg .state-label,.tree-svg .state-label{font-size:18px;font-weight:600;text-anchor:middle;dominant-baseline:middle}
+.graph-svg .edge-label,.tree-svg .edge-label{font-size:16px;font-weight:600;text-anchor:middle;dominant-baseline:middle}
+.graph-svg .hint,.tree-svg .hint{font-size:13px;fill:#6a6a65}
+.tree{
+  background:#fff;border:1px solid var(--line);border-radius:24px;padding:1.2vw;min-height:420px;
+}
+.note{background:var(--accent);border-radius:20px;padding:1.2vw 1.5vw}
+.steps{margin:0;padding-left:1.25em}
+.morse-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.2vw;margin:2vh 0}
+.morse{background:#fff;border:1px solid var(--line);border-radius:18px;padding:1vw 1.2vw;text-align:center}
+.morse b{display:block;font-size:clamp(24px,2vw,34px);margin-bottom:.2em}
+.morse span{font-size:clamp(20px,1.7vw,30px)}
+.solution{
+  display:grid;grid-template-columns:1.2fr .8fr;gap:3vw;align-items:center
+}
+.tree{background:#fff;border:1px solid var(--line);border-radius:24px;padding:2vw;min-height:420px;position:relative}
+.tree-row{display:flex;justify-content:center;gap:8vw;align-items:center;margin:1.7vh 0}
+.tree-node{
+  width:86px;height:86px;border-radius:50%;border:2px solid #111;background:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:600;position:relative
+}
+.tree-node.end:after{content:"";position:absolute;inset:6px;border:2px solid #111;border-radius:50%}
+.tree-node.dead{border-radius:16px;background:var(--soft)}
+.connector{text-align:center;font-size:20px;color:#333}
+.footer{position:absolute;bottom:2.7vh;left:4vw;color:#8a8a84;font-size:15px}
+.controls{
+  position:fixed;right:18px;bottom:16px;display:flex;gap:8px;z-index:50
+}
+.controls button{
+  border:0;border-radius:999px;background:#222;color:#fff;width:42px;height:42px;font-size:20px;cursor:pointer;opacity:.75
+}
+.controls button:hover{opacity:1}
+.progress{
+  position:fixed;left:0;bottom:0;height:4px;background:var(--accent-strong);z-index:60;transition:width .2s ease
+}
+
+.editor-shell{display:grid;grid-template-columns:1.45fr .75fr;gap:1.7vw;align-items:stretch}
+.editor-panel{background:#fff;border:1px solid var(--line);border-radius:22px;padding:1.2vw}
+.toolbar{display:flex;gap:.55rem;flex-wrap:wrap;align-items:center;margin-bottom:.8rem}
+.toolbtn,.actionbtn{
+  appearance:none;border:1px solid #c9c9c2;background:#fff;color:#151515;border-radius:10px;
+  padding:.55rem .8rem;font:inherit;font-size:14px;cursor:pointer
+}
+.toolbtn.active{background:var(--accent);border-color:var(--accent-strong);font-weight:700}
+.toolbtn:hover,.actionbtn:hover{background:#f2f2ed}
+.toolbar input,.tester input{
+  border:1px solid #c9c9c2;border-radius:9px;padding:.55rem .7rem;font:inherit;background:#fff
+}
+#deaCanvas{
+  width:100%;height:51vh;min-height:390px;background:#fbfbf8;border:1px dashed #c8c8c0;border-radius:16px;
+  touch-action:none;user-select:none
+}
+#deaCanvas .editor-state{cursor:grab}
+#deaCanvas .editor-state.dragging{cursor:grabbing}
+#deaCanvas .state-ring{fill:#fff;stroke:#151515;stroke-width:2.3}
+#deaCanvas .end-ring{fill:none;stroke:#151515;stroke-width:2}
+#deaCanvas .active-ring{fill:none;stroke:var(--accent-strong);stroke-width:7;opacity:.55}
+#deaCanvas .selected-ring{fill:none;stroke:#777;stroke-width:2;stroke-dasharray:5 5}
+#deaCanvas .transition-line{fill:none;stroke:#151515;stroke-width:2.1}
+#deaCanvas .transition-label-bg{fill:#fbfbf8}
+#deaCanvas .transition-label{font-size:16px;font-weight:700;text-anchor:middle;dominant-baseline:middle}
+#deaCanvas .state-text{font-size:17px;font-weight:700;text-anchor:middle;dominant-baseline:middle}
+#deaCanvas .start-marker{font-size:29px;font-weight:700}
+.inspector label{display:block;font-size:13px;font-weight:700;margin:.75rem 0 .25rem;color:#555}
+.inspector input{width:100%;border:1px solid #c9c9c2;border-radius:9px;padding:.55rem .65rem;font:inherit}
+.tester{margin-top:1rem;padding-top:1rem;border-top:1px solid var(--line)}
+.status{
+  background:var(--soft);border-radius:12px;padding:.75rem .85rem;margin-top:.7rem;
+  font-size:14px;line-height:1.4;min-height:58px
+}
+.charstrip{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.6rem}
+.charstrip span{min-width:28px;text-align:center;padding:.22rem .35rem;border-radius:7px;background:#efefe9;font-weight:700}
+.charstrip span.done{background:var(--accent)}
+.charstrip span.current{outline:2px solid var(--accent-strong)}
+.help-list{font-size:14px;color:#555;margin:.7rem 0 0;padding-left:1.2em;line-height:1.45}
+@media (max-width:900px){
+  .editor-shell{grid-template-columns:1fr}
+  #deaCanvas{height:480px}
+}
+
+@media (max-width:900px){
+  body{overflow:auto;background:var(--bg)}
+  .deck{height:auto}
+  .slide{display:block;position:relative;width:auto;height:auto;min-height:100vh;padding:32px 24px 70px}
+  .slide:not(.active){display:block}
+  .grid-2,.grid-3,.example-layout,.solution{grid-template-columns:1fr}
+  .graph{height:430px}
+  .controls,.progress{display:none}
+}
+</style>
+<link rel="stylesheet" href="../../kurse.css" data-lernportal-style>
+</head>
+<body>
+
+<nav class="lp-navbar">
+    <a class="lp-back" href="index.html">&larr; Zur&uuml;ck</a>
+    <a class="lp-home" href="../../index.html">Lernportal</a>
+</nav>
+
+<div class="deck">
+
+<section class="slide active">
+  <div class="kicker">GRUNDIDEE</div>
+  <h1>Deterministische endliche Automaten (DEA)</h1>
+  <div class="grid-2">
+    <div>
+      <p>Ein DEA liest eine Zeichenkette <b>Zeichen für Zeichen</b>. Dabei ist zu jedem Zustand und jedem Eingabezeichen genau <b>ein Folgezustand</b> festgelegt.</p>
+      <div class="note" style="margin-top:2.2vh"><b>deterministisch</b> = nie zwei mögliche Wege für dieselbe Eingabe</div>
+      <div class="rule">Eine Zeichenkette wird akzeptiert, wenn der DEA nach dem letzten Zeichen in einem <b>Endzustand</b> steht.</div>
+    </div>
+    <div class="grid-3" style="grid-template-columns:1fr">
+      <div class="card"><div class="symbol">Z</div><h2>Zustände</h2><p class="small">Beschreiben, in welcher Situation sich der Automat gerade befindet.</p></div>
+      <div class="card"><div class="symbol">Σ</div><h2>Alphabet</h2><p class="small">Alle Zeichen oder Eingaben, die der Automat lesen kann.</p></div>
+      <div class="card"><div class="symbol">δ</div><h2>Übergänge</h2><p class="small">Regeln, die für jede Eingabe den nächsten Zustand festlegen.</p></div>
+    </div>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><span class="arrow">→</span><span class="node">q₀</span> Startzustand</div>
+    <div class="legend-item"><span class="node end">q</span> Endzustand</div>
+  </div>
+  <div class="footer">1</div>
+</section>
+
+<section class="slide">
+  <div class="kicker">BEISPIEL</div>
+  <h1>Ein DEA aus dem Alltag: Musikplayer</h1>
+  <p class="small">Eingabealphabet Σ = { P, S } &nbsp;&nbsp;•&nbsp;&nbsp; P = Play/Pause &nbsp;&nbsp;•&nbsp;&nbsp; S = Stop</p>
+  <div class="example-layout">
+    <div class="graph">
+      <svg class="graph-svg" viewBox="0 0 700 430" role="img" aria-label="Zustandsgraph eines Musikplayers">
+        <defs>
+          <marker id="arrowMusic" markerWidth="10" markerHeight="10" refX="8.5" refY="3.5" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L9,3.5 L0,7 Z" fill="#151515"></path>
+          </marker>
+        </defs>
+
+        <!-- Startpfeil -->
+        <path class="transition" d="M35 215 H105" marker-end="url(#arrowMusic)"></path>
+
+        <!-- Zustände -->
+        <circle class="state-circle" cx="165" cy="215" r="52"></circle>
+        <text class="state-label" x="165" y="215">Stopp</text>
+
+        <circle class="state-circle" cx="480" cy="120" r="52"></circle>
+        <circle class="end-circle" cx="480" cy="120" r="44"></circle>
+        <text class="state-label" x="480" y="120">Play</text>
+
+        <circle class="state-circle" cx="480" cy="310" r="52"></circle>
+        <text class="state-label" x="480" y="310">Pause</text>
+
+        <!-- Stopp -> Play -->
+        <path class="transition" d="M214 197 C300 170 355 145 427 128" marker-end="url(#arrowMusic)"></path>
+        <rect class="edge-label-bg" x="311" y="149" width="28" height="24" rx="6"></rect>
+        <text class="edge-label" x="325" y="161">P</text>
+
+        <!-- Play -> Pause -->
+        <path class="transition" d="M480 173 C480 205 480 230 480 257" marker-end="url(#arrowMusic)"></path>
+        <rect class="edge-label-bg" x="492" y="202" width="28" height="24" rx="6"></rect>
+        <text class="edge-label" x="506" y="214">P</text>
+
+        <!-- Stopp Schleife S -->
+        <path class="transition" d="M132 171 C94 123 119 88 165 88 C211 88 236 123 198 171" marker-end="url(#arrowMusic)"></path>
+        <rect class="edge-label-bg" x="152" y="82" width="28" height="24" rx="6"></rect>
+        <text class="edge-label" x="166" y="94">S</text>
+
+        <!-- Play -> Stopp mit S, eigene obere Route -->
+        <path class="transition" d="M437 88 C345 38 225 48 181 161" marker-end="url(#arrowMusic)"></path>
+        <rect class="edge-label-bg" x="300" y="47" width="28" height="24" rx="6"></rect>
+        <text class="edge-label" x="314" y="59">S</text>
+
+        <!-- Pause -> Play mit P -->
+        <path class="transition" d="M527 287 C583 250 585 178 527 143" marker-end="url(#arrowMusic)"></path>
+        <rect class="edge-label-bg" x="557" y="207" width="28" height="24" rx="6"></rect>
+        <text class="edge-label" x="571" y="219">P</text>
+
+        <!-- Pause -> Stopp mit S, untere Route -->
+        <path class="transition" d="M437 342 C340 399 225 382 181 269" marker-end="url(#arrowMusic)"></path>
+        <rect class="edge-label-bg" x="302" y="360" width="28" height="24" rx="6"></rect>
+        <text class="edge-label" x="316" y="372">S</text>
+      </svg>
+    </div>
+    <div class="card">
+      <h2>Warum ist das ein DEA?</h2>
+      <ol class="steps">
+        <li>Es gibt genau einen Startzustand.</li>
+        <li>Von jedem Zustand geht für <b>P</b> genau eine Kante und für <b>S</b> genau eine Kante aus.</li>
+        <li>Damit gibt es bei jeder Eingabe immer genau einen möglichen Weg.</li>
+      </ol>
+    </div>
+  </div>
+  <div class="footer">2</div>
+</section>
+
+<section class="slide">
+  <div class="kicker">MERKSATZ</div>
+  <h1>So liest du einen Zustandsgraphen</h1>
+  <div class="grid-2">
+    <div class="card">
+      <h2>Die wichtigsten Symbole</h2>
+      <div class="legend" style="display:grid;gap:2.1vh;margin-top:3vh">
+        <div class="legend-item"><span class="arrow">→</span><span class="node">q₀</span><b>Startzustand</b></div>
+        <div class="legend-item"><span class="node end">qₑ</span><b>Endzustand</b></div>
+        <div class="legend-item"><span style="font-size:24px">— a →</span><b>Zustandsübergang mit Eingabezeichen</b></div>
+      </div>
+    </div>
+    <div>
+      <div class="note">
+        <div class="kicker" style="margin-bottom:.4em">MERKSATZ</div>
+        <p><b>Starte am Startpfeil und lies die Eingabe von links nach rechts.</b></p>
+        <p>Für jedes Zeichen folgst du genau einer Kante. Nach dem letzten Zeichen entscheidet der erreichte Zustand:</p>
+        <p><b>Doppelkreis → akzeptiert</b><br>Einfacher Kreis → verworfen</p>
+      </div>
+      <div class="rule">Kurz gesagt: Der Weg durch den Graphen ist die Verarbeitung der Zeichenkette.</div>
+    </div>
+  </div>
+  <div class="footer">3</div>
+</section>
+
+<section class="slide">
+  <div class="kicker">ANWENDEN</div>
+  <h1>Übung: Morsecode als formale Sprache</h1>
+  <p>Ein DEA erzeugt den Morsecode nicht selbst – er kann prüfen, ob eine eingegebene Punkt-Strich-Folge zu unserer Sprache gehört.</p>
+  <div class="morse-grid">
+    <div class="morse"><b>E</b><span>·</span></div>
+    <div class="morse"><b>A</b><span>· −</span></div>
+    <div class="morse"><b>N</b><span>− ·</span></div>
+    <div class="morse"><b>O</b><span>− − −</span></div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h2>Aufgabe</h2>
+      <p>Konstruiere einen DEA über <b>Σ = { · , − }</b>, der genau die vier Morsezeichen für <b>E, A, N und O</b> akzeptiert.</p>
+      <p style="font-size:clamp(23px,2vw,34px)"><b>L = { · , ·− , −· , −−− }</b></p>
+    </div>
+    <div class="card soft">
+      <ol class="steps">
+        <li>Markiere Start- und Endzustände.</li>
+        <li>Beschrifte jede Kante mit · oder −.</li>
+        <li>Teste anschließend: <b>·− &nbsp; | &nbsp; −−− &nbsp; | &nbsp; ·· &nbsp; | &nbsp; −·</b></li>
+      </ol>
+      <div class="note" style="margin-top:2vh">Tipp: Gemeinsame Präfixe teilen sich Zustände.</div>
+    </div>
+  </div>
+  <div class="footer">4</div>
+</section>
+
+<section class="slide">
+  <div class="kicker">AUSPROBIEREN</div>
+  <h1>DEA-Labor: eigenen Zustandsgraphen bauen</h1>
+  <div class="editor-shell">
+    <div class="editor-panel">
+      <div class="toolbar">
+        <button class="toolbtn active" data-mode="select">Auswählen / Ziehen</button>
+        <button class="toolbtn" data-mode="add">+ Zustand</button>
+        <button class="toolbtn" data-mode="transition">→ Übergang</button>
+        <label class="small" style="margin-left:.3rem">Zeichen
+          <input id="edgeSymbol" value="0" maxlength="4" style="width:72px;margin-left:.3rem">
+        </label>
+        <button class="actionbtn" id="loadExample">Beispiel laden</button>
+        <button class="actionbtn" id="clearGraph">Leeren</button>
+      </div>
+      <svg id="deaCanvas" viewBox="0 0 900 520" aria-label="Interaktiver Editor für deterministische endliche Automaten">
+        <defs>
+          <marker id="editorArrow" markerWidth="10" markerHeight="10" refX="8.5" refY="3.5" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L9,3.5 L0,7 Z" fill="#151515"></path>
+          </marker>
+        </defs>
+        <g id="edgeLayer"></g>
+        <g id="stateLayer"></g>
+      </svg>
+    </div>
+
+    <div class="editor-panel inspector">
+      <h2 style="margin-bottom:.4rem">Ausgewählter Zustand</h2>
+      <label for="stateLabel">Beschriftung</label>
+      <input id="stateLabel" value="" placeholder="z. B. q₀">
+      <div class="toolbar" style="margin-top:.7rem">
+        <button class="actionbtn" id="toggleStart">Startzustand</button>
+        <button class="actionbtn" id="toggleEnd">Endzustand</button>
+        <button class="actionbtn" id="deleteSelected">Löschen</button>
+      </div>
+
+      <ul class="help-list">
+        <li><b>+ Zustand:</b> anschließend in die Fläche klicken.</li>
+        <li><b>→ Übergang:</b> erst Quellzustand, dann Zielzustand anklicken.</li>
+        <li>Zustände lassen sich im Auswahlmodus verschieben.</li>
+      </ul>
+
+      <div class="tester">
+        <h2 style="margin-bottom:.5rem">Zeichenkette testen</h2>
+        <input id="testInput" value="010" placeholder="z. B. 010" autocomplete="off">
+        <div class="toolbar" style="margin-top:.65rem">
+          <button class="actionbtn" id="testReset">Start</button>
+          <button class="actionbtn" id="testNext">Nächstes Zeichen</button>
+          <button class="actionbtn" id="testAll">Ganz testen</button>
+        </div>
+        <div class="charstrip" id="charStrip"></div>
+        <div class="status" id="testStatus">Baue einen Automaten oder lade das Beispiel. Danach kannst du eine Zeichenkette Schritt für Schritt verfolgen.</div>
+      </div>
+    </div>
+  </div>
+  <div class="footer">5</div>
+</section>
+
+</div>
+
+<div class="controls">
+  <button id="prev" aria-label="Vorherige Folie">‹</button>
+  <button id="next" aria-label="Nächste Folie">›</button>
+</div>
+<div class="progress" id="progress"></div>
+
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+let i=0;
+function show(n){
+  i=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+  document.getElementById('progress').style.width=((i+1)/slides.length*100)+'%';
+  document.getElementById('prev').disabled=(i===0);
+  document.getElementById('next').disabled=(i===slides.length-1);
+  document.getElementById('prev').style.opacity=(i===0)?'.25':'.75';
+  document.getElementById('next').style.opacity=(i===slides.length-1)?'.25':'.75';
+}
+document.getElementById('prev').onclick=()=>show(i-1);
+document.getElementById('next').onclick=()=>show(i+1);
+document.addEventListener('keydown',e=>{
+  if(['ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();show(i+1)}
+  if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();show(i-1)}
+  if(e.key==='Home')show(0);
+  if(e.key==='End')show(slides.length-1);
+});
+
+// --- DEA-Labor -------------------------------------------------------------
+const svg = document.getElementById('deaCanvas');
+const edgeLayer = document.getElementById('edgeLayer');
+const stateLayer = document.getElementById('stateLayer');
+const edgeSymbol = document.getElementById('edgeSymbol');
+const stateLabelInput = document.getElementById('stateLabel');
+const statusBox = document.getElementById('testStatus');
+const charStrip = document.getElementById('charStrip');
+
+let editorMode='select', states=[], transitions=[], selectedId=null, transitionSource=null;
+let draggingId=null, dragOffset={x:0,y:0}, nextId=0;
+let testPos=0, currentStateId=null, testFailed=false;
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function stateById(id){return states.find(s=>s.id===id)}
+function startState(){return states.find(s=>s.start)}
+function svgPoint(evt){
+  const pt=svg.createSVGPoint(); pt.x=evt.clientX; pt.y=evt.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+function setMode(mode){
+  editorMode=mode; transitionSource=null;
+  document.querySelectorAll('.toolbtn[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+  renderEditor();
+}
+document.querySelectorAll('.toolbtn[data-mode]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+
+function addState(x,y,label){
+  const id='s'+(nextId++);
+  states.push({id,x,y,label:label||('q'+(states.length)),start:states.length===0,end:false});
+  selectedId=id; renderEditor(); syncInspector();
+}
+function boundaryPoint(a,b,r=44){
+  const dx=b.x-a.x, dy=b.y-a.y, d=Math.hypot(dx,dy)||1;
+  return {x:a.x+dx/d*r,y:a.y+dy/d*r};
+}
+function edgePath(t,index){
+  const a=stateById(t.from), b=stateById(t.to);
+  if(!a||!b) return null;
+  if(a.id===b.id){
+    const x=a.x,y=a.y;
+    return {
+      d:`M ${x-27} ${y-34} C ${x-68} ${y-94}, ${x+68} ${y-94}, ${x+27} ${y-34}`,
+      lx:x, ly:y-82
+    };
+  }
+  const p1=boundaryPoint(a,b,46), p2=boundaryPoint(b,a,48);
+  // curve repeated opposite-direction edges slightly so arrowheads remain visible
+  const opposite=transitions.some((u,j)=>j!==index && u.from===t.to && u.to===t.from);
+  if(opposite){
+    const dx=p2.x-p1.x, dy=p2.y-p1.y, len=Math.hypot(dx,dy)||1;
+    const nx=-dy/len, ny=dx/len;
+    const sign=(t.from<t.to?1:-1), bend=42*sign;
+    const cx=(p1.x+p2.x)/2+nx*bend, cy=(p1.y+p2.y)/2+ny*bend;
+    return {d:`M ${p1.x} ${p1.y} Q ${cx} ${cy} ${p2.x} ${p2.y}`,lx:cx,ly:cy-10};
+  }
+  return {d:`M ${p1.x} ${p1.y} L ${p2.x} ${p2.y}`,lx:(p1.x+p2.x)/2,ly:(p1.y+p2.y)/2-12};
+}
+function renderEditor(){
+  edgeLayer.innerHTML='';
+  transitions.forEach((t,i)=>{
+    const ep=edgePath(t,i); if(!ep)return;
+    edgeLayer.insertAdjacentHTML('beforeend',
+      `<path class="transition-line" d="${ep.d}" marker-end="url(#editorArrow)"></path>
+       <rect class="transition-label-bg" x="${ep.lx-15}" y="${ep.ly-12}" width="30" height="24" rx="6"></rect>
+       <text class="transition-label" x="${ep.lx}" y="${ep.ly}">${esc(t.symbol)}</text>`);
+  });
+  stateLayer.innerHTML='';
+  states.forEach(s=>{
+    const selected=s.id===selectedId, active=s.id===currentStateId;
+    const startArrow=s.start?`<path class="transition-line" d="M ${s.x-88} ${s.y} H ${s.x-49}" marker-end="url(#editorArrow)"></path>`:'';
+    const activeRing=active?`<circle class="active-ring" cx="${s.x}" cy="${s.y}" r="52"></circle>`:'';
+    const selRing=selected?`<circle class="selected-ring" cx="${s.x}" cy="${s.y}" r="57"></circle>`:'';
+    const endRing=s.end?`<circle class="end-ring" cx="${s.x}" cy="${s.y}" r="36"></circle>`:'';
+    stateLayer.insertAdjacentHTML('beforeend',
+      `<g class="editor-state" data-id="${s.id}">
+        ${startArrow}${activeRing}${selRing}
+        <circle class="state-ring" cx="${s.x}" cy="${s.y}" r="44"></circle>
+        ${endRing}
+        <text class="state-text" x="${s.x}" y="${s.y}">${esc(s.label)}</text>
+      </g>`);
+  });
+}
+function syncInspector(){
+  const s=stateById(selectedId);
+  stateLabelInput.value=s?s.label:'';
+  stateLabelInput.disabled=!s;
+}
+stateLabelInput.addEventListener('input',()=>{
+  const s=stateById(selectedId); if(!s)return;
+  s.label=stateLabelInput.value; renderEditor();
+});
+document.getElementById('toggleStart').onclick=()=>{
+  const s=stateById(selectedId); if(!s)return;
+  states.forEach(x=>x.start=false); s.start=true; resetTest(false); renderEditor();
+};
+document.getElementById('toggleEnd').onclick=()=>{
+  const s=stateById(selectedId); if(!s)return;
+  s.end=!s.end; renderEditor();
+};
+document.getElementById('deleteSelected').onclick=()=>{
+  if(!selectedId)return;
+  states=states.filter(s=>s.id!==selectedId);
+  transitions=transitions.filter(t=>t.from!==selectedId&&t.to!==selectedId);
+  selectedId=null; resetTest(false); renderEditor(); syncInspector();
+};
+
+svg.addEventListener('pointerdown',evt=>{
+  const group=evt.target.closest?.('.editor-state');
+  const id=group?.dataset?.id;
+  const p=svgPoint(evt);
+
+  if(editorMode==='add' && !id){
+    addState(p.x,p.y); setMode('select'); return;
+  }
+  if(!id) { selectedId=null; syncInspector(); renderEditor(); return; }
+
+  selectedId=id; syncInspector();
+
+  if(editorMode==='transition'){
+    if(!transitionSource){
+      transitionSource=id; statusBox.textContent='Quellzustand gewählt. Klicke jetzt den Zielzustand an.';
+      renderEditor();
+    }else{
+      const symbol=edgeSymbol.value.trim();
+      if(!symbol){ statusBox.textContent='Bitte zuerst ein Eingabezeichen für den Übergang eintragen.'; return; }
+      // DEA rule: one outgoing transition per symbol. Replace an existing transition with same source+symbol.
+      transitions=transitions.filter(t=>!(t.from===transitionSource && t.symbol===symbol));
+      transitions.push({from:transitionSource,to:id,symbol});
+      transitionSource=null;
+      statusBox.textContent='Übergang angelegt. Falls für dieses Zeichen bereits ein Übergang existierte, wurde er ersetzt.';
+      renderEditor();
+    }
+    return;
+  }
+
+  if(editorMode==='select'){
+    draggingId=id;
+    const s=stateById(id); dragOffset={x:p.x-s.x,y:p.y-s.y};
+    svg.setPointerCapture(evt.pointerId);
+    renderEditor();
+  }
+});
+svg.addEventListener('pointermove',evt=>{
+  if(!draggingId)return;
+  const p=svgPoint(evt),s=stateById(draggingId); if(!s)return;
+  s.x=Math.max(65,Math.min(835,p.x-dragOffset.x));
+  s.y=Math.max(65,Math.min(455,p.y-dragOffset.y));
+  renderEditor();
+});
+svg.addEventListener('pointerup',evt=>{draggingId=null; try{svg.releasePointerCapture(evt.pointerId)}catch{} });
+
+function loadExample(){
+  nextId=3;
+  states=[
+    {id:'s0',x:185,y:260,label:'q₀',start:true,end:false},
+    {id:'s1',x:455,y:155,label:'q₁',start:false,end:true},
+    {id:'s2',x:690,y:300,label:'q₂',start:false,end:false}
+  ];
+  transitions=[
+    {from:'s0',to:'s1',symbol:'0'},
+    {from:'s0',to:'s2',symbol:'1'},
+    {from:'s1',to:'s1',symbol:'0'},
+    {from:'s1',to:'s2',symbol:'1'},
+    {from:'s2',to:'s1',symbol:'0'},
+    {from:'s2',to:'s2',symbol:'1'}
+  ];
+  selectedId='s0'; resetTest(false); renderEditor(); syncInspector();
+  statusBox.textContent='Beispiel geladen: ein vollständiger DEA über {0,1}.';
+}
+document.getElementById('loadExample').onclick=loadExample;
+document.getElementById('clearGraph').onclick=()=>{
+  states=[]; transitions=[]; selectedId=null; nextId=0; resetTest(false); renderEditor(); syncInspector();
+  statusBox.textContent='Leere Zeichenfläche. Wähle „+ Zustand“ und klicke in die Fläche.';
+};
+
+function resetTest(show=true){
+  const st=startState(); testPos=0; currentStateId=st?.id||null; testFailed=false;
+  renderCharStrip(); renderEditor();
+  if(show) statusBox.textContent=st?`Start in ${st.label}.`:'Es ist kein Startzustand festgelegt.';
+}
+function renderCharStrip(){
+  const chars=[...document.getElementById('testInput').value];
+  charStrip.innerHTML=chars.map((c,i)=>`<span class="${i<testPos?'done':i===testPos&&!testFailed?'current':''}">${esc(c)}</span>`).join('');
+}
+function nextTestStep(){
+  if(testFailed)return;
+  const input=[...document.getElementById('testInput').value];
+  if(currentStateId===null){resetTest(); if(currentStateId===null)return}
+  if(testPos>=input.length){
+    const s=stateById(currentStateId);
+    statusBox.innerHTML=s?.end?`Fertig in <b>${esc(s.label)}</b> → Zeichenkette wird <b>akzeptiert ✓</b>.`:`Fertig in <b>${esc(s?.label||'?')}</b> → kein Endzustand, also <b>verworfen ✗</b>.`;
+    return;
+  }
+  const symbol=input[testPos], options=transitions.filter(t=>t.from===currentStateId&&t.symbol===symbol);
+  if(options.length===0){
+    const s=stateById(currentStateId);
+    statusBox.innerHTML=`Bei Zeichen <b>${esc(symbol)}</b> gibt es von <b>${esc(s?.label||'?')}</b> keinen Übergang.`;
+    testFailed=true; renderCharStrip(); return;
+  }
+  if(options.length>1){
+    statusBox.innerHTML=`Für <b>${esc(symbol)}</b> gibt es mehrere mögliche Übergänge. Der Graph ist an dieser Stelle <b>nicht deterministisch</b>.`;
+    testFailed=true; renderCharStrip(); return;
+  }
+  const from=stateById(currentStateId), tr=options[0], to=stateById(tr.to);
+  currentStateId=tr.to; testPos++;
+  renderCharStrip(); renderEditor();
+  statusBox.innerHTML=`Zeichen <b>${esc(symbol)}</b>: ${esc(from.label)} → <b>${esc(to.label)}</b>.`;
+  if(testPos>=input.length){
+    statusBox.innerHTML+=to.end?` Ende erreicht → <b>akzeptiert ✓</b>.`:` Ende erreicht → <b>verworfen ✗</b>.`;
+  }
+}
+document.getElementById('testReset').onclick=()=>resetTest(true);
+document.getElementById('testNext').onclick=nextTestStep;
+document.getElementById('testAll').onclick=()=>{
+  resetTest(false);
+  const n=[...document.getElementById('testInput').value].length;
+  for(let k=0;k<=n && !testFailed;k++) nextTestStep();
+};
+document.getElementById('testInput').addEventListener('input',()=>resetTest(false));
+
+loadExample();
+
+show(0);
+</script>
+</body>
+</html>
