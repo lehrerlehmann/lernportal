@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minischach Expertensystem und lernende KI</title>
+  <style>
+    :root {
+      --blue: #1e88e5;
+      --green: #43a047;
+      --red: #e53935;
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --dark: #1f2937;
+      --muted: #6b7280;
+      --cell: 94px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--dark);
+    }
+
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 { margin: 0 0 8px; color: var(--blue); }
+    h2 { margin: 0 0 12px; font-size: 1.2rem; }
+    p { line-height: 1.45; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.08);
+    }
+
+    .controls {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    select, button {
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 1rem;
+      background: white;
+    }
+
+    button {
+      cursor: pointer;
+      background: var(--blue);
+      color: white;
+      border: none;
+      font-weight: 700;
+    }
+
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    button.secondary { background: #374151; }
+    button.danger { background: var(--red); }
+
+    .board {
+      width: calc(var(--cell) * 3);
+      height: calc(var(--cell) * 3);
+      display: grid;
+      grid-template-columns: repeat(3, var(--cell));
+      grid-template-rows: repeat(3, var(--cell));
+      border: 4px solid #111827;
+      margin: 18px auto;
+      background: #fff;
+    }
+
+    .cell {
+      width: var(--cell);
+      height: var(--cell);
+      border: 2px solid #111827;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 46px;
+      position: relative;
+      user-select: none;
+      cursor: pointer;
+    }
+
+    .cell.selected { outline: 5px solid #fbbf24; outline-offset: -8px; }
+    .cell.legal::after {
+      content: "";
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(30, 136, 229, .35);
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+    }
+
+    .piece.human { filter: drop-shadow(0 2px 1px rgba(0,0,0,.2)); }
+    .piece.bot { filter: drop-shadow(0 2px 1px rgba(0,0,0,.2)); }
+
+    .status {
+      min-height: 58px;
+      padding: 12px;
+      border-radius: 12px;
+      background: #eef2ff;
+      font-weight: 700;
+    }
+
+    .small { color: var(--muted); font-size: .92rem; }
+
+    .legend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      font-size: .9rem;
+    }
+
+    .pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #eef2f7;
+    }
+
+    .learn-panel {
+      display: grid;
+      gap: 14px;
+    }
+
+    .move-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 10px;
+    }
+
+    .move-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 10px;
+      background: #fbfdff;
+    }
+
+    .move-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .bar-wrap {
+      height: 14px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+      margin: 6px 0;
+    }
+
+    .bar {
+      height: 100%;
+      background: var(--green);
+      width: 0%;
+      transition: width .25s ease;
+    }
+
+    .tokens {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      min-height: 20px;
+      margin-top: 8px;
+    }
+
+    .token {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .token.pos { background: var(--green); }
+    .token.neg { background: var(--red); }
+
+    .move-diagram {
+      width: 88px;
+      height: 88px;
+      display: block;
+      margin: 4px 0 8px;
+    }
+
+    .state-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      max-height: 520px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .state-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 10px;
+      background: #fbfdff;
+      display: grid;
+      grid-template-columns: 96px 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .state-card-header {
+      display: none;
+    }
+
+    .state-board {
+      width: 92px;
+      height: 92px;
+      display: block;
+      margin: 4px 0 8px;
+    }
+
+    .state-moves {
+      display: grid;
+      gap: 4px;
+      font-size: .84rem;
+    }
+
+    .state-move-row {
+      display: grid;
+      grid-template-columns: 70px 1fr 58px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .state-move-diagram {
+      width: 64px;
+      height: 64px;
+      display: block;
+    }
+
+    .ratio-bar {
+      height: 16px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+      display: flex;
+      border: 1px solid #d1d5db;
+    }
+
+    .ratio-green {
+      height: 100%;
+      background: var(--green);
+      min-width: 0;
+    }
+
+    .ratio-red {
+      height: 100%;
+      background: var(--red);
+      min-width: 0;
+    }
+
+    .history {
+      max-height: 140px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      background: #111827;
+      color: #e5e7eb;
+      border-radius: 12px;
+      padding: 10px;
+      font-size: .86rem;
+    }
+
+    @media (max-width: 920px) {
+      .grid { grid-template-columns: 1fr; }
+      :root { --cell: 82px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Minischach: Expertensystem und lernende KI</h1>
+    <p class="small">Bauernspiel auf einem 3x3-Feld. Eine Figur zieht gerade nach vorne und schlägt diagonal. Gewonnen hat, wer die Gegenseite erreicht, alle gegnerischen Figuren schlägt oder dem Gegner keinen Zug mehr lässt.</p>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Spiel</h2>
+        <div class="controls">
+          <label>
+            Modus<br />
+            <select id="mode">
+              <option value="expert">Mensch gegen Expertensystem</option>
+              <option value="learning">Mensch gegen lernende Zufalls-KI</option>
+              <option value="pvp">Zwei Spieler</option>
+            </select>
+          </label>
+          <label>
+            Wer beginnt?<br />
+            <select id="starter">
+              <option value="H">Mensch / Spieler 1</option>
+              <option value="C">Computer / Spieler 2</option>
+            </select>
+          </label>
+          <button id="newGame">Neues Spiel</button>
+          
+        </div>
+
+        <div id="status" class="status"></div>
+        <div style="display:grid; grid-template-columns: 28px auto; width:max-content; margin:18px auto; gap:6px; align-items:start;">
+          <div style="display:grid; grid-template-rows: repeat(3, var(--cell)); font-weight:700; color:#374151;">
+            <div style="display:flex; align-items:center; justify-content:center;">3</div>
+            <div style="display:flex; align-items:center; justify-content:center;">2</div>
+            <div style="display:flex; align-items:center; justify-content:center;">1</div>
+          </div>
+
+          <div>
+            <div id="board" class="board"></div>
+            <div style="display:grid; grid-template-columns: repeat(3, var(--cell)); width:calc(var(--cell) * 3); margin:auto; font-weight:700; color:#374151;">
+              <div style="text-align:center; padding-top:6px;">A</div>
+              <div style="text-align:center; padding-top:6px;">B</div>
+              <div style="text-align:center; padding-top:6px;">C</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="legend">
+          
+        </div>
+      </section>
+
+      <section class="card learn-panel">
+        <div>
+          <h2>Lernen der Zufalls-KI</h2>
+          <p class="small">Die lernende KI trainiert gegen einen Zufallsgegner. In 50% der Trainingsspiele beginnt die KI, in 50% beginnt der Gegner. Die KI merkt sich die Spielsituation und den gewählten Zug. Beim Entscheiden kombiniert sie diese konkrete Erfahrung mit der allgemeinen Erfahrung zur Zugart.</p>
+        </div>
+        <div id="stats" class="small"></div>
+        <div class="history" id="history"></div>
+
+        <div style="display:grid; gap:10px; margin-top:8px;">
+          <button id="autoTrain" class="secondary">500 Lernspiele KI gegen Zufall</button>
+          <button id="resetLearning" class="danger">Lernen zurücksetzen</button>
+        </div>
+
+        <div>
+          <h2 style="margin-top:18px;">Gelernte Spielsituationen</h2>
+          <p class="small">Hier werden alle sinnvoll erreichbaren Spielsituationen aus Sicht des Computers angezeigt. Der Computer zieht immer von oben nach unten.</p>
+          <div class="state-list" id="stateList"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const HUMAN = "H";
+  const COMP = "C";
+  const icons = { H: "👩", C: "🤖" };
+
+  const initialBoard = [
+    [COMP, COMP, COMP],
+    [null, null, null],
+    [HUMAN, HUMAN, HUMAN]
+  ];
+
+  let board = cloneBoard(initialBoard);
+  let turn = HUMAN;
+  let selected = null;
+  let gameOver = false;
+  let learningMovesThisGame = [];
+  let scores = loadScores();
+  let gamesPlayed = Number(localStorage.getItem("miniChessGames") || 0);
+  let learningWins = Number(localStorage.getItem("miniChessLearningWins") || 0);
+  let learningLosses = Number(localStorage.getItem("miniChessLearningLosses") || 0);
+
+  const boardEl = document.getElementById("board");
+  const statusEl = document.getElementById("status");
+  const modeEl = document.getElementById("mode");
+  const starterEl = document.getElementById("starter");
+  const moveListEl = null;
+  const stateListEl = document.getElementById("stateList");
+  const statsEl = document.getElementById("stats");
+  const historyEl = document.getElementById("history");
+
+  document.getElementById("newGame").addEventListener("click", newGame);
+  document.getElementById("resetLearning").addEventListener("click", resetLearning);
+  document.getElementById("autoTrain").addEventListener("click", () => {
+    const btn = document.getElementById("autoTrain");
+    btn.disabled = true;
+    btn.textContent = "Training läuft...";
+    autoTrain(500);
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = "500 Lernspiele KI gegen Zufall";
+    }, 2000);
+  });
+  modeEl.addEventListener("change", newGame);
+  starterEl.addEventListener("change", newGame);
+
+  newGame();
+
+  function newGame() {
+    board = cloneBoard(initialBoard);
+    turn = starterEl.value;
+    selected = null;
+    gameOver = false;
+    learningMovesThisGame = [];
+    render();
+    maybeComputerMove();
+  }
+
+  function cloneBoard(b) {
+    return b.map(row => row.slice());
+  }
+
+  function inBounds(r, c) {
+    return r >= 0 && r < 3 && c >= 0 && c < 3;
+  }
+
+  function getMoves(b, player) {
+    const dir = player === HUMAN ? -1 : 1;
+    const enemy = player === HUMAN ? COMP : HUMAN;
+    const moves = [];
+
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        if (b[r][c] !== player) continue;
+
+        const forward = { from: [r, c], to: [r + dir, c], capture: false };
+        if (inBounds(forward.to[0], forward.to[1]) && b[forward.to[0]][forward.to[1]] === null) moves.push(forward);
+
+        for (const dc of [-1, 1]) {
+          const nr = r + dir;
+          const nc = c + dc;
+          if (inBounds(nr, nc) && b[nr][nc] === enemy) moves.push({ from: [r, c], to: [nr, nc], capture: true });
+        }
+      }
+    }
+    return moves;
+  }
+
+  function applyMove(b, move) {
+    const nb = cloneBoard(b);
+    const [fr, fc] = move.from;
+    const [tr, tc] = move.to;
+    nb[tr][tc] = nb[fr][fc];
+    nb[fr][fc] = null;
+    return nb;
+  }
+
+  function moveKey(move) {
+    return `${move.from[0]}${move.from[1]}-${move.to[0]}${move.to[1]}`;
+  }
+
+  function prettyMove(move) {
+    const cols = ["A", "B", "C"];
+    return `${cols[move.from[1]]}${3 - move.from[0]} → ${cols[move.to[1]]}${3 - move.to[0]}`;
+  }
+
+  function checkWinner(b, nextTurn) {
+    const hPieces = countPieces(b, HUMAN);
+    const cPieces = countPieces(b, COMP);
+    if (hPieces === 0) return { winner: COMP, reason: "Alle menschlichen Figuren wurden geschlagen." };
+    if (cPieces === 0) return { winner: HUMAN, reason: "Alle Computer-Figuren wurden geschlagen." };
+
+    for (let c = 0; c < 3; c++) {
+      if (b[0][c] === HUMAN) return { winner: HUMAN, reason: "Eine menschliche Figur hat die Gegenseite erreicht." };
+      if (b[2][c] === COMP) return { winner: COMP, reason: "Eine Computer-Figur hat die Gegenseite erreicht." };
+    }
+
+    const moves = getMoves(b, nextTurn);
+    if (moves.length === 0) {
+      return { winner: nextTurn === HUMAN ? COMP : HUMAN, reason: "Der Gegner kann keinen Zug mehr machen." };
+    }
+    return null;
+  }
+
+  function countPieces(b, player) {
+    return b.flat().filter(x => x === player).length;
+  }
+
+  function render() {
+    renderBoard();
+    renderStatus();
+    renderLearning();
+  }
+
+  function renderBoard() {
+    boardEl.innerHTML = "";
+    const legal = selected ? getMoves(board, turn).filter(m => samePos(m.from, selected)) : [];
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        if (selected && selected[0] === r && selected[1] === c) cell.classList.add("selected");
+        if (legal.some(m => samePos(m.to, [r, c]))) cell.classList.add("legal");
+        if (board[r][c]) {
+          const piece = document.createElement("span");
+          piece.className = `piece ${board[r][c] === HUMAN ? "human" : "bot"}`;
+          piece.textContent = icons[board[r][c]];
+          cell.appendChild(piece);
+        }
+        cell.addEventListener("click", () => clickCell(r, c));
+        boardEl.appendChild(cell);
+      }
+    }
+  }
+
+  function renderStatus() {
+    if (gameOver) return;
+    const mode = modeEl.value;
+    const name = turn === HUMAN ? "Spieler 1" : "Spieler 2";
+    statusEl.textContent = `${name} ist am Zug.`;
+  }
+
+  function renderLearning() {
+    const all = allMoveKeys();
+    const visibleWeights = all.map(key => aggregateMoveWeight(key));
+    const totalWeight = visibleWeights.reduce((sum, weight) => sum + weight, 0);
+    statsEl.textContent = `Lernspiele: ${gamesPlayed} | Siege der lernenden KI: ${learningWins} | Niederlagen: ${learningLosses}`;
+    renderBoardStates();
+  }
+
+  function renderBoardStates() {
+    if (!stateListEl) return;
+    const states = getReachableComputerStates();
+    stateListEl.innerHTML = "";
+
+    states.forEach((state) => {
+      const moves = getMoves(state.board, COMP);
+
+      const rows = moves.map((move) => {
+        const s = getDecisionStats(state.board, move);
+        const totalTokens = s.pos + s.neg;
+
+        // Balken zeigt nur diese konkrete Situation + diesen konkreten Zug.
+        // Ohne Erfahrung wird der Balken neutral 50/50 angezeigt.
+        const greenPct = totalTokens ? (s.pos / totalTokens * 100) : 50;
+        const redPct = totalTokens ? (s.neg / totalTokens * 100) : 50;
+        const label = totalTokens ? `${s.pos}/${s.neg}` : "0/0";
+
+        return `
+          <div class="state-move-row">
+            ${miniMoveSvgBlack(moveKey(move))}
+            <div class="ratio-bar" title="grün: Siege, rot: Niederlagen in genau dieser Spielsituation">
+              <div class="ratio-green" style="width:${greenPct}%"></div>
+              <div class="ratio-red" style="width:${redPct}%"></div>
+            </div>
+            <span title="Siege / Niederlagen">${label}</span>
+          </div>
+        `;
+      }).join("") || `<div class="small">Keine Computerzüge möglich.</div>`;
+
+      const card = document.createElement("div");
+      card.className = "state-card";
+      card.innerHTML = `
+        ${miniBoardStateSvg(state.board)}
+        <div class="state-moves">${rows}</div>
+      `;
+      stateListEl.appendChild(card);
+    });
+  }
+
+  function getReachableComputerStates() {
+    const found = new Map();
+    const seen = new Set();
+
+    function visit(b, player, depth) {
+      const stateId = `${boardKey(b)}|${player}`;
+      if (seen.has(stateId) || depth > 8) return;
+      seen.add(stateId);
+
+      const result = checkWinner(b, player);
+      if (result) return;
+
+      if (player === COMP) {
+        const key = boardKey(b);
+        if (!found.has(key)) {
+          found.set(key, {
+            board: cloneBoard(b),
+            turnDepth: depth
+          });
+        }
+      }
+
+      const moves = getMoves(b, player);
+      for (const move of moves) {
+        visit(applyMove(b, move), player === HUMAN ? COMP : HUMAN, depth + 1);
+      }
+    }
+
+    visit(cloneBoard(initialBoard), COMP, 0);
+    visit(cloneBoard(initialBoard), HUMAN, 0);
+
+    return [...found.entries()]
+      .map(([key, value]) => ({
+        board: value.board,
+        key,
+        turnDepth: value.turnDepth,
+        pieces: countPieces(value.board, HUMAN) + countPieces(value.board, COMP)
+      }))
+      // Erst nach Zugnummer sortieren, danach stabil nach Brettinhalt.
+      .sort((a, b) => a.turnDepth - b.turnDepth || a.key.localeCompare(b.key));
+  }
+
+  function miniMoveSvgBlack(key) {
+    const [from, to] = key.split("-");
+    const fr = Number(from[0]), fc = Number(from[1]);
+    const tr = Number(to[0]), tc = Number(to[1]);
+    const cell = 18;
+    const pad = 5;
+    const x1 = pad + fc * cell + cell / 2;
+    const y1 = pad + fr * cell + cell / 2;
+    const x2 = pad + tc * cell + cell / 2;
+    const y2 = pad + tr * cell + cell / 2;
+    const markerId = `black-arrow-${from}-${to}`;
+    let lines = "";
+    for (let i = 0; i <= 3; i++) {
+      const p = pad + i * cell;
+      lines += `<line x1="${pad}" y1="${p}" x2="${pad + 3 * cell}" y2="${p}" stroke="#111827" stroke-width="1.5" />`;
+      lines += `<line x1="${p}" y1="${pad}" x2="${p}" y2="${pad + 3 * cell}" stroke="#111827" stroke-width="1.5" />`;
+    }
+    return `
+      <svg class="state-move-diagram" viewBox="0 0 64 64" aria-label="Zugdiagramm">
+        <defs>
+          <marker id="${markerId}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L7,3 z" fill="#111827"></path>
+          </marker>
+        </defs>
+        ${lines}
+        <circle cx="${x1}" cy="${y1}" r="6" fill="#111827"></circle>
+        <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#111827" stroke-width="3" stroke-linecap="round" marker-end="url(#${markerId})" />
+      </svg>
+    `;
+  }
+
+  function miniBoardStateSvg(b) {
+    const cell = 28;
+    const pad = 4;
+    let lines = "";
+    for (let i = 0; i <= 3; i++) {
+      const p = pad + i * cell;
+      lines += `<line x1="${pad}" y1="${p}" x2="${pad + 3 * cell}" y2="${p}" stroke="#111827" stroke-width="2" />`;
+      lines += `<line x1="${p}" y1="${pad}" x2="${p}" y2="${pad + 3 * cell}" stroke="#111827" stroke-width="2" />`;
+    }
+
+    let pieces = "";
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        if (!b[r][c]) continue;
+        const x = pad + c * cell + cell / 2;
+        const y = pad + r * cell + cell / 2;
+        const fill = b[r][c] === COMP ? "#1e88e5" : "#f59e0b";
+        const label = b[r][c] === COMP ? "R" : "S";
+        pieces += `<circle cx="${x}" cy="${y}" r="10" fill="${fill}"></circle>`;
+        pieces += `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="11" font-weight="700" fill="white">${label}</text>`;
+      }
+    }
+
+    return `
+      <svg class="state-board" viewBox="0 0 92 92" aria-label="Spielsituation">
+        ${lines}
+        ${pieces}
+      </svg>
+    `;
+  }
+
+  function tokensHtml(s) {
+    const maxShown = 16;
+    const posShown = Math.min(s.pos, maxShown);
+    const negShown = Math.min(s.neg, maxShown);
+    const pos = Array.from({ length: posShown }, () => '<span class="token pos"></span>').join("");
+    const neg = Array.from({ length: negShown }, () => '<span class="token neg"></span>').join("");
+    const more = (s.pos > maxShown || s.neg > maxShown) ? `<span class="small">…</span>` : "";
+    return pos + neg + more;
+  }
+
+  function clickCell(r, c) {
+    if (gameOver) return;
+    if (isComputerTurn()) return;
+
+    const piece = board[r][c];
+    if (piece === turn) {
+      selected = [r, c];
+      render();
+      return;
+    }
+
+    if (selected) {
+      const move = getMoves(board, turn).find(m => samePos(m.from, selected) && samePos(m.to, [r, c]));
+      if (move) doMove(move);
+      else { selected = null; render(); }
+    }
+  }
+
+  function samePos(a, b) {
+    return a[0] === b[0] && a[1] === b[1];
+  }
+
+  function doMove(move, silent = false) {
+    board = applyMove(board, move);
+    if (turn === COMP && modeEl.value === "learning") learningMovesThisGame.push(learningKey(board, move));
+    turn = turn === HUMAN ? COMP : HUMAN;
+    selected = null;
+
+    const result = checkWinner(board, turn);
+    if (result) finishGame(result, silent);
+    else {
+      if (!silent) render();
+      if (!silent) maybeComputerMove();
+    }
+  }
+
+  function finishGame(result, silent = false) {
+    gameOver = true;
+    if (modeEl.value === "learning") rewardLearning(result.winner === COMP);
+    if (!silent) {
+      statusEl.textContent = `${result.winner === HUMAN ? "Spieler 1" : "Spieler 2"} gewinnt. ${result.reason}`;
+      renderBoard();
+      renderLearning();
+    }
+  }
+
+  function isComputerTurn() {
+    return turn === COMP && modeEl.value !== "pvp";
+  }
+
+  function maybeComputerMove() {
+    if (!isComputerTurn() || gameOver) return;
+    setTimeout(() => {
+      const move = modeEl.value === "expert" ? expertMove(board, COMP) : learningMove(board, COMP);
+      if (move) doMove(move);
+    }, 350);
+  }
+
+  function randomMove(b, player) {
+    const moves = getMoves(b, player);
+    if (!moves.length) return null;
+    return moves[Math.floor(Math.random() * moves.length)];
+  }
+
+  function expertMove(b, player) {
+    const moves = getMoves(b, player);
+    if (!moves.length) return null;
+
+    // 1. Sofort gewinnen, wenn möglich.
+    for (const m of moves) {
+      const nb = applyMove(b, m);
+      const result = checkWinner(nb, player === HUMAN ? COMP : HUMAN);
+      if (result && result.winner === player) return m;
+    }
+
+    // 2. Schlagzüge bevorzugen.
+    const captures = moves.filter(m => m.capture);
+    if (captures.length) return captures[0];
+
+    // 3. Gegnerischen Sofortsieg blockieren, soweit möglich.
+    for (const m of moves) {
+      const nb = applyMove(b, m);
+      const enemyMoves = getMoves(nb, player === HUMAN ? COMP : HUMAN);
+      const enemyWins = enemyMoves.some(em => {
+        const after = applyMove(nb, em);
+        const res = checkWinner(after, player);
+        return res && res.winner !== player;
+      });
+      if (!enemyWins) return m;
+    }
+
+    // 4. Sonst den ersten legalen Zug nehmen.
+    return moves[0];
+  }
+
+  function learningMove(b, player) {
+    const moves = getMoves(b, player);
+    if (!moves.length) return null;
+
+    const weights = getPickWeightsForMoves(b, moves);
+    const total = weights.reduce((s, w) => s + w, 0);
+
+    // Falls alle Siegraten 0 sind, wird gleichverteilt gewählt.
+    if (total <= 0) return moves[Math.floor(Math.random() * moves.length)];
+
+    let r = Math.random() * total;
+    for (let i = 0; i < moves.length; i++) {
+      r -= weights[i];
+      if (r <= 0) return moves[i];
+    }
+    return moves[moves.length - 1];
+  }
+
+  function getPickWeightsForMoves(b, moves) {
+    return moves.map(move => {
+      const stats = getDecisionStats(b, move);
+      const winRate = stats.total > 0 ? stats.pos / stats.total : 0.5;
+      return winRate * winRate;
+    });
+  }
+
+  function getDecisionStats(b, move) {
+    const specificKey = learningKey(b, move);
+    const specific = scores[specificKey] || { pos: 0, neg: 0 };
+
+    // Entscheidungen werden jetzt vollständig kontextbezogen bewertet.
+    // Jede Spielsituation besitzt ihre eigene Statistik.
+    return {
+      pos: specific.pos,
+      neg: specific.neg,
+      total: specific.pos + specific.neg
+    };
+  }
+
+  function boardKey(b) {
+    return b.map(row => row.map(x => x || ".").join("")).join("/");
+  }
+
+  function learningKey(b, move) {
+    return `${boardKey(b)}|${moveKey(move)}`;
+  }
+
+  function movePart(key) {
+    return key.includes("|") ? key.split("|").pop() : key;
+  }
+
+  function aggregateMoveScore(movePattern) {
+    const total = { pos: 0, neg: 0 };
+    for (const key of Object.keys(scores)) {
+      if (movePart(key) === movePattern) {
+        total.pos += scores[key].pos || 0;
+        total.neg += scores[key].neg || 0;
+      }
+    }
+    return total;
+  }
+
+  function aggregateMoveWeight(movePattern) {
+    const s = aggregateMoveScore(movePattern);
+    return scoreToWeight(s.pos, s.neg);
+  }
+
+  function getWeight(key) {
+    const s = scores[key] || { pos: 0, neg: 0 };
+    return scoreToWeight(s.pos, s.neg);
+  }
+
+  function getChoiceWeight(b, move) {
+    const stats = getDecisionStats(b, move);
+    const winRate = stats.total > 0 ? stats.pos / stats.total : 0.5;
+    return winRate * winRate;
+  }
+
+  function scoreToWeight(pos, neg) {
+    // Stärkerer Lernfaktor als vorher:
+    // Positive Erfahrungen zählen etwas stärker als negative, damit gute Strategien sichtbar wachsen.
+    const raw = 1 + 0.55 * pos - 0.40 * neg;
+    return clamp(raw, 0.12, 12);
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function rewardLearning(win) {
+    const unique = [...new Set(learningMovesThisGame)];
+    unique.forEach((key, index) => {
+      if (!scores[key]) scores[key] = { pos: 0, neg: 0 };
+
+      // Spätere Züge sind näher am Ergebnis und werden etwas stärker bewertet.
+      // Dadurch lernt die KI sauberer als bei gleich starker Belohnung aller Züge.
+      const strength = 1 + index / Math.max(1, unique.length - 1);
+      const amount = strength >= 1.5 ? 3 : 2;
+
+      if (win) scores[key].pos += amount;
+      else scores[key].neg += amount;
+    });
+    gamesPlayed++;
+    if (win) learningWins++; else learningLosses++;
+    saveScores();
+    const line = `${win ? "Sieg" : "Niederlage"}: ${unique.map(k => keyToPretty(movePart(k))).join(", ") || "keine KI-Züge"}`;
+    historyEl.innerHTML = line + "<br>" + historyEl.innerHTML;
+  }
+
+  function allMoveKeys() {
+    const keys = new Set();
+    // Nur die Zugrichtung des Roboters: von oben nach unten.
+    // Gespiegelte Mensch-Züge werden nicht extra gelistet.
+    const player = COMP;
+    const dir = 1;
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        const targets = [[r + dir, c], [r + dir, c - 1], [r + dir, c + 1]];
+        for (const [tr, tc] of targets) {
+          if (inBounds(tr, tc)) keys.add(`${r}${c}-${tr}${tc}`);
+        }
+      }
+    }
+    return [...keys].sort();
+  }
+
+  function miniMoveSvg(key) {
+    const [from, to] = key.split("-");
+    const fr = Number(from[0]), fc = Number(from[1]);
+    const tr = Number(to[0]), tc = Number(to[1]);
+    const cell = 26;
+    const pad = 5;
+    const x1 = pad + fc * cell + cell / 2;
+    const y1 = pad + fr * cell + cell / 2;
+    const x2 = pad + tc * cell + cell / 2;
+    const y2 = pad + tr * cell + cell / 2;
+    let lines = "";
+    for (let i = 0; i <= 3; i++) {
+      const p = pad + i * cell;
+      lines += `<line x1="${pad}" y1="${p}" x2="${pad + 3 * cell}" y2="${p}" stroke="#111827" stroke-width="2" />`;
+      lines += `<line x1="${p}" y1="${pad}" x2="${p}" y2="${pad + 3 * cell}" stroke="#111827" stroke-width="2" />`;
+    }
+    return `
+      <svg class="move-diagram" viewBox="0 0 88 88" aria-label="Zugdiagramm">
+        <defs>
+          <marker id="arrow-${key}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L7,3 z" fill="#e53935"></path>
+          </marker>
+        </defs>
+        ${lines}
+        <circle cx="${x1}" cy="${y1}" r="8" fill="#43a047" opacity=".95"></circle>
+        <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#e53935" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow-${key})" />
+      </svg>
+    `;
+  }
+
+  function keyToPretty(key) {
+    const cols = ["A", "B", "C"];
+    const [from, to] = key.split("-");
+    const fr = Number(from[0]), fc = Number(from[1]);
+    const tr = Number(to[0]), tc = Number(to[1]);
+    return `${cols[fc]}${3 - fr} → ${cols[tc]}${3 - tr}`;
+  }
+
+  function loadScores() {
+    try { return JSON.parse(localStorage.getItem("miniChessScores") || "{}"); }
+    catch { return {}; }
+  }
+
+  function saveScores() {
+    localStorage.setItem("miniChessScores", JSON.stringify(scores));
+    localStorage.setItem("miniChessGames", String(gamesPlayed));
+    localStorage.setItem("miniChessLearningWins", String(learningWins));
+    localStorage.setItem("miniChessLearningLosses", String(learningLosses));
+  }
+
+  function resetLearning() {
+    scores = {};
+    gamesPlayed = 0;
+    learningWins = 0;
+    learningLosses = 0;
+    historyEl.innerHTML = "";
+    saveScores();
+    renderLearning();
+  }
+
+  function autoTrain(n) {
+    const oldMode = modeEl.value;
+    modeEl.value = "learning";
+    for (let i = 0; i < n; i++) {
+      board = cloneBoard(initialBoard);
+      turn = i % 2 === 0 ? COMP : HUMAN;
+      gameOver = false;
+      learningMovesThisGame = [];
+      let guard = 0;
+      while (!gameOver && guard++ < 50) {
+        const player = turn;
+        const move = player === COMP ? learningMove(board, COMP) : randomMove(board, HUMAN);
+        if (!move) {
+          finishGame({ winner: player === COMP ? HUMAN : COMP, reason: "Kein Zug möglich." }, true);
+          break;
+        }
+        if (player === COMP) learningMovesThisGame.push(learningKey(board, move));
+        board = applyMove(board, move);
+        turn = player === HUMAN ? COMP : HUMAN;
+        const result = checkWinner(board, turn);
+        if (result) finishGame(result, true);
+      }
+    }
+    modeEl.value = oldMode;
+    newGame();
+    renderLearning();
+  }
+})();
+</script>
+</body>
+</html>
