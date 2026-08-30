@@ -129,14 +129,14 @@ kbd{background:#fff;border:1px solid #d8d8d1;border-bottom-width:2px;border-radi
       <div class="hintbox">
         <b>Bedienung</b><br>
         • Zustand anklicken → Umbenennen, Start-/Endzustand, Übergang ziehen, Löschen<br>
-        • Übergangsbeschriftung anklicken → Zeichen ändern oder Übergang löschen<br>
+        • Übergangsbeschriftung anklicken → Zeichen ändern, <b>beliebiger Buchstabe</b> oder <b>beliebige Ziffer</b> wählen, Übergang löschen<br>
         • Zustand oder Übergangsbeschriftung gedrückt halten → verschieben<br>
         • Rechtsklick öffnet dasselbe Menü wie ein normaler Klick
       </div>
 
       <div class="tester">
         <h2 class="panel-title">Zeichenkette testen</h2>
-        <input id="testInput" value="010" placeholder="z. B. 010" autocomplete="off">
+        <input id="testInput" value="010" placeholder="z. B. A7b oder 010" autocomplete="off">
         <div class="toolbar" style="margin-top:.65rem">
           <button class="actionbtn" id="testReset">Start</button>
           <button class="actionbtn" id="testNext">Nächstes Zeichen</button>
@@ -177,6 +177,50 @@ function svgPoint(evt){
 }
 function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
 function newTransitionId(){return 't'+Math.random().toString(36).slice(2,10)}
+
+// Spezielle Übergangstypen. Intern werden Tokens gespeichert, im Graphen
+// erscheinen verständliche Beschriftungen.
+const ANY_LETTER='__ANY_LETTER__';
+const ANY_DIGIT='__ANY_DIGIT__';
+
+function transitionDisplaySymbol(symbol){
+  if(symbol===ANY_LETTER) return 'Buchstabe';
+  if(symbol===ANY_DIGIT) return 'Ziffer';
+  return symbol;
+}
+
+function isLetter(ch){
+  // Unicode-Buchstaben, also z. B. auch ä, ö, ü und ß.
+  try{return /^\p{L}$/u.test(ch)}catch{return /^[A-Za-zÄÖÜäöüß]$/.test(ch)}
+}
+function isDigit(ch){return /^[0-9]$/.test(ch)}
+
+function transitionMatchesSymbol(transitionSymbol,inputSymbol){
+  if(transitionSymbol===ANY_LETTER) return isLetter(inputSymbol);
+  if(transitionSymbol===ANY_DIGIT) return isDigit(inputSymbol);
+  return transitionSymbol===inputSymbol;
+}
+
+// Zwei ausgehende Übergänge dürfen bei einem DEA nicht dieselbe Eingabe
+// akzeptieren. Ein konkretes „A“ kollidiert daher z. B. mit „Buchstabe“.
+function transitionSymbolsOverlap(a,b){
+  if(a===b) return true;
+  if(a===ANY_LETTER) return b.length===1 && isLetter(b);
+  if(b===ANY_LETTER) return a.length===1 && isLetter(a);
+  if(a===ANY_DIGIT) return b.length===1 && isDigit(b);
+  if(b===ANY_DIGIT) return a.length===1 && isDigit(a);
+  return false;
+}
+
+function setTransitionSymbol(tid,newSymbol){
+  const t=transitionById(tid); if(!t)return;
+  transitions=transitions.filter(x=>
+    x.id===tid || x.from!==t.from || !transitionSymbolsOverlap(x.symbol,newSymbol)
+  );
+  t.symbol=newSymbol;
+  resetTest(false);
+  renderEditor();
+}
 
 function addState(x,y,label){
   const id='s'+(nextId++);
@@ -228,13 +272,15 @@ function renderEditor(){
   edgeLayer.innerHTML='';
   transitions.forEach((t,i)=>{
     const ep=edgeGeometry(t,i); if(!ep)return;
+    const shown=transitionDisplaySymbol(t.symbol);
+    const labelWidth=Math.max(36,shown.length*9+18);
     edgeLayer.insertAdjacentHTML('beforeend',
       `<g class="editor-transition" data-tid="${t.id}">
         <path class="transition-line" d="${ep.d}" marker-end="url(#editorArrow)"></path>
         <path class="transition-hit" d="${ep.d}"></path>
         <g class="transition-label-group" data-tid="${t.id}" transform="translate(${ep.lx} ${ep.ly})">
-          <rect class="transition-label-bg" x="-18" y="-13" width="36" height="26" rx="7"></rect>
-          <text class="transition-label" x="0" y="1">${esc(t.symbol)}</text>
+          <rect class="transition-label-bg" x="${-labelWidth/2}" y="-13" width="${labelWidth}" height="26" rx="7"></rect>
+          <text class="transition-label" x="0" y="1">${esc(shown)}</text>
         </g>
       </g>`);
   });
@@ -324,32 +370,48 @@ function openStateMenu(id,clientX,clientY){
 
 function openTransitionMenu(tid,clientX,clientY){
   const t=transitionById(tid); if(!t)return;
+  const shown=transitionDisplaySymbol(t.symbol);
+  const literalValue=(t.symbol===ANY_LETTER||t.symbol===ANY_DIGIT)?'':t.symbol;
   showMenuAt(clientX,clientY,`
-    <div class="context-title">Übergang</div>
+    <div class="context-title">Übergang · ${esc(shown)}</div>
     <div class="inline-editor">
-      <input id="transitionRenameInput" value="${esc(t.symbol)}" maxlength="8" aria-label="Übergang umbenennen">
+      <input id="transitionRenameInput" value="${esc(literalValue)}" maxlength="8" placeholder="konkretes Zeichen" aria-label="Übergang umbenennen">
       <button id="transitionRenameOk">OK</button>
     </div>
+    <button class="menu-btn" id="transitionAnyLetterBtn">${t.symbol===ANY_LETTER?'✓ ':''}Beliebiger Buchstabe</button>
+    <button class="menu-btn" id="transitionAnyDigitBtn">${t.symbol===ANY_DIGIT?'✓ ':''}Beliebige Ziffer (0–9)</button>
     <div class="menu-sep"></div>
     <button class="menu-btn danger" id="transitionDeleteBtn">Übergang löschen <b>×</b></button>`);
   const input=document.getElementById('transitionRenameInput');
-  const commitRename=()=>{
+
+  const commitLiteral=()=>{
     const v=input.value.trim(); if(!v)return;
-    // DEA: for a source state one symbol may only have one destination
-    transitions=transitions.filter(x=>x.id===tid || !(x.from===t.from && x.symbol===v));
-    t.symbol=v; renderEditor(); resetTest(false); closeMenu();
+    setTransitionSymbol(tid,v);
+    closeMenu();
   };
-  document.getElementById('transitionRenameOk').onclick=commitRename;
-  input.addEventListener('keydown',e=>{if(e.key==='Enter')commitRename(); if(e.key==='Escape')closeMenu();});
+  document.getElementById('transitionRenameOk').onclick=commitLiteral;
+  input.addEventListener('keydown',e=>{if(e.key==='Enter')commitLiteral(); if(e.key==='Escape')closeMenu();});
+
+  document.getElementById('transitionAnyLetterBtn').onclick=()=>{
+    setTransitionSymbol(tid,ANY_LETTER);
+    statusBox.textContent='Der Übergang gilt jetzt für ein beliebiges alphabetisches Zeichen.';
+    closeMenu();
+  };
+  document.getElementById('transitionAnyDigitBtn').onclick=()=>{
+    setTransitionSymbol(tid,ANY_DIGIT);
+    statusBox.textContent='Der Übergang gilt jetzt für eine beliebige Ziffer von 0 bis 9.';
+    closeMenu();
+  };
+
   document.getElementById('transitionDeleteBtn').onclick=()=>{
     transitions=transitions.filter(x=>x.id!==tid); resetTest(false); renderEditor(); closeMenu();
   };
-  setTimeout(()=>{input.focus();input.select();},0);
+  setTimeout(()=>{input.focus(); if(literalValue)input.select();},0);
 }
 
 function createTransition(from,to,symbol='0'){
-  // Replace same source+symbol to keep the DEA deterministic.
-  transitions=transitions.filter(t=>!(t.from===from && t.symbol===symbol));
+  // Überschneidende Eingabemengen ersetzen, damit der Automat deterministisch bleibt.
+  transitions=transitions.filter(t=>!(t.from===from && transitionSymbolsOverlap(t.symbol,symbol)));
   const id=newTransitionId();
   transitions.push({id,from,to,symbol,labelDx:0,labelDy:0});
   resetTest(false); renderEditor();
@@ -504,7 +566,8 @@ document.getElementById('addStateBtn').onclick=()=>{
   statusBox.textContent=addStateArmed?'Klicke auf eine freie Stelle im Zeichenfeld, um einen Zustand anzulegen.':'Zustand hinzufügen abgebrochen.';
 };
 
-document.getElementById('loadExample').onclick=loadExample;
+const loadExampleBtn=document.getElementById('loadExample');
+if(loadExampleBtn) loadExampleBtn.onclick=loadExample;
 document.getElementById('clearGraph').onclick=()=>{
   if(states.length && !confirm('Den gesamten Graphen wirklich leeren?')) return;
   states=[];transitions=[];selectedId=null;nextId=0;transitionDraft=null;resetTest(false);renderEditor();
@@ -548,7 +611,7 @@ function nextTestStep(){
     statusBox.innerHTML=s?.end?`Fertig in <b>${esc(s.label)}</b> → Zeichenkette wird <b>akzeptiert ✓</b>.`:`Fertig in <b>${esc(s?.label||'?')}</b> → kein Endzustand, also <b>verworfen ✗</b>.`;
     return;
   }
-  const symbol=input[testPos],options=transitions.filter(t=>t.from===currentStateId&&t.symbol===symbol);
+  const symbol=input[testPos],options=transitions.filter(t=>t.from===currentStateId&&transitionMatchesSymbol(t.symbol,symbol));
   if(options.length===0){
     const s=stateById(currentStateId);statusBox.innerHTML=`Bei Zeichen <b>${esc(symbol)}</b> gibt es von <b>${esc(s?.label||'?')}</b> keinen Übergang.`;
     testFailed=true;renderCharStrip();return;
