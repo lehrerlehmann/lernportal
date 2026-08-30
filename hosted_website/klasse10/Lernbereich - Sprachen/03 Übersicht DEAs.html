@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Übersicht DEAs</title>
+<style>
+:root{
+  --bg:#f7f7f4;
+  --paper:#ffffff;
+  --ink:#151515;
+  --muted:#666;
+  --line:#d7d7d1;
+  --accent:#dce8d4;
+  --accent-strong:#6f8568;
+  --soft:#efefe9;
+  --warm:#f3ead8;
+  --blue:#dfe9ef;
+  --rose:#eee1df;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  font-family:Bahnschrift,"Aptos","Segoe UI",Arial,sans-serif;
+  color:var(--ink);
+  background:var(--bg);
+}
+a{color:inherit}
+.lp-navbar{
+  position:sticky;top:0;z-index:20;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 24px;
+  background:rgba(247,247,244,.94);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.lp-navbar a{text-decoration:none;font-size:14px;color:#555}
+main{width:min(1180px,calc(100% - 40px));margin:0 auto;padding:58px 0 80px}
+.kicker{font-size:.92rem;letter-spacing:.14em;font-weight:700;color:#6b7963;margin-bottom:.8rem}
+h1{font-weight:400;font-size:clamp(42px,6vw,78px);line-height:1;margin:0 0 1rem}
+.lead{font-size:clamp(18px,2vw,26px);line-height:1.45;color:#40403d;max-width:850px;margin:0 0 3.5rem}
+h2{font-size:clamp(28px,3.2vw,44px);font-weight:500;margin:0 0 1.4rem}
+h3{font-size:20px;margin:0 0 .55rem}
+p,li{font-size:17px;line-height:1.55}
+section{margin:0 0 4.2rem}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:24px}
+.card.green{background:var(--accent)}
+.card.blue{background:var(--blue)}
+.card.warm{background:var(--warm)}
+.card.rose{background:var(--rose)}
+.symbol{font-size:42px;font-weight:600;margin-bottom:.35rem}
+.small{color:var(--muted);font-size:15px}
+.rule{background:var(--paper);border-left:7px solid var(--accent-strong);border-radius:0 16px 16px 0;padding:18px 22px;font-weight:700;font-size:18px}
+.checklist{display:grid;gap:12px}
+.check{display:flex;gap:12px;align-items:flex-start;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:15px 18px}
+.check .dot{width:24px;height:24px;border-radius:50%;background:var(--accent);display:grid;place-items:center;font-weight:700;flex:0 0 auto}
+.legend{display:flex;gap:24px;align-items:center;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:10px}
+.node{display:inline-grid;place-items:center;width:64px;height:64px;border:2px solid #151515;border-radius:50%;background:white;position:relative;font-weight:700}
+.node.end:after{content:"";position:absolute;inset:6px;border:2px solid #151515;border-radius:50%}
+.arrow{font-size:32px}
+.flow{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap}
+.step{flex:1 1 180px;background:white;border:1px solid var(--line);border-radius:16px;padding:17px}
+.step b{display:block;margin-bottom:.35rem}
+.graph-wrap{background:white;border:1px solid var(--line);border-radius:22px;padding:14px;min-height:390px}
+.graph-wrap svg{display:block;width:100%;height:auto}
+.graph-svg text{font-family:Bahnschrift,"Aptos","Segoe UI",Arial,sans-serif;fill:#151515}
+.graph-svg .state-circle{fill:#fff;stroke:#151515;stroke-width:2.2}
+.graph-svg .end-circle{fill:none;stroke:#151515;stroke-width:2}
+.graph-svg .transition{fill:none;stroke:#151515;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
+.graph-svg .edge-label-bg{fill:#fff}
+.graph-svg .state-label{font-size:18px;font-weight:600;text-anchor:middle;dominant-baseline:middle}
+.graph-svg .edge-label{font-size:16px;font-weight:700;text-anchor:middle;dominant-baseline:middle}
+.morse{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.morse .card{text-align:center;padding:18px}
+.morse b{font-size:28px;display:block;margin-bottom:.15rem}
+.morse span{font-size:26px}
+.summary-box{background:var(--accent);border-radius:22px;padding:26px}
+.summary-box strong{font-size:20px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.chip{background:white;border:1px solid rgba(0,0,0,.08);border-radius:999px;padding:7px 11px;font-size:14px;font-weight:700}
+@media(max-width:820px){
+  .grid-3,.grid-2,.morse{grid-template-columns:1fr}
+  main{width:min(100% - 28px,1180px);padding-top:36px}
+  .lp-navbar{padding:10px 14px}
+}
+</style>
+<link rel="stylesheet" href="../../kurse.css" data-lernportal-style>
+<link rel="stylesheet" href="../../kurse.css" data-lernportal-style>
+</head>
+<body>
+
+<nav class="lp-navbar">
+    <a class="lp-back" href="index.html">&larr; Zur&uuml;ck</a>
+    <a class="lp-home" href="../../index.html">Lernportal</a>
+</nav>
+
+<nav class="lp-navbar">
+  <a class="lp-back" href="index.html">← Zurück</a>
+  <a class="lp-home" href="../../index.html">Lernportal</a>
+</nav>
+
+<main>
+  <header>
+    <div class="kicker">ÜBERSICHT</div>
+    <h1>Deterministische endliche Automaten</h1>
+    <p class="lead">Ein DEA verarbeitet eine Zeichenkette Schritt für Schritt. Zu jedem Zustand und jedem Eingabezeichen ist genau ein Folgezustand festgelegt.</p>
+  </header>
+
+  <section>
+    <h2>1. Die Grundidee</h2>
+    <div class="grid-3">
+      <div class="card green"><div class="symbol">Z</div><h3>Zustände</h3><p>Sie beschreiben, in welcher Situation sich der Automat gerade befindet.</p></div>
+      <div class="card blue"><div class="symbol">Σ</div><h3>Alphabet</h3><p>Es enthält alle Zeichen oder Eingaben, die der Automat lesen kann.</p></div>
+      <div class="card warm"><div class="symbol">δ</div><h3>Übergänge</h3><p>Sie legen fest, in welchen Zustand der Automat bei einem Eingabezeichen wechselt.</p></div>
+    </div>
+    <div class="rule" style="margin-top:20px">Deterministisch bedeutet: Für dieselbe Eingabe gibt es aus einem Zustand nie zwei verschiedene Wege.</div>
+  </section>
+
+  <section>
+    <h2>2. So sieht ein Zustandsgraph aus</h2>
+    <div class="card">
+      <div class="legend">
+        <div class="legend-item"><span class="arrow">→</span><span class="node">q₀</span><b>Startzustand</b></div>
+        <div class="legend-item"><span class="node end">qₑ</span><b>Endzustand</b></div>
+        <div class="legend-item"><span style="font-size:24px">— a →</span><b>Übergang für das Zeichen a</b></div>
+      </div>
+    </div>
+    <p class="small" style="margin-top:10px">Ein DEA besitzt genau einen Startzustand. Endzustände werden als Doppelkreis dargestellt.</p>
+  </section>
+
+  <section>
+    <h2>3. Zeichenketten lesen</h2>
+    <div class="flow">
+      <div class="step"><b>1. Starten</b>Beginne am Startzustand.</div>
+      <div class="step"><b>2. Lesen</b>Lies die Zeichenkette von links nach rechts.</div>
+      <div class="step"><b>3. Folgen</b>Folge für jedes Zeichen genau einem Übergang.</div>
+      <div class="step"><b>4. Entscheiden</b>Nach dem letzten Zeichen entscheidet der erreichte Zustand.</div>
+    </div>
+    <div class="grid-2" style="margin-top:18px">
+      <div class="card green"><h3>Akzeptiert ✓</h3><p>Nach dem letzten Zeichen befindet sich der Automat in einem <b>Endzustand</b>.</p></div>
+      <div class="card rose"><h3>Verworfen ✗</h3><p>Nach dem letzten Zeichen befindet sich der Automat in <b>keinem Endzustand</b>.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>4. Wann ist ein Automat ein DEA?</h2>
+    <div class="checklist">
+      <div class="check"><span class="dot">1</span><div><b>Genau ein Startzustand</b><br><span class="small">Von hier beginnt jede Verarbeitung.</span></div></div>
+      <div class="check"><span class="dot">2</span><div><b>Für jedes Eingabezeichen genau ein möglicher Weg</b><br><span class="small">Es gibt keine Entscheidung zwischen mehreren Übergängen.</span></div></div>
+      <div class="check"><span class="dot">3</span><div><b>Übergänge sind eindeutig beschriftet</b><br><span class="small">Die Eingabe bestimmt den nächsten Zustand.</span></div></div>
+      <div class="check"><span class="dot">4</span><div><b>Endzustände bestimmen die Akzeptanz</b><br><span class="small">Nur der Zustand nach dem letzten Zeichen ist entscheidend.</span></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>5. Beispiel: Musikplayer</h2>
+    <p>Alphabet: <b>Σ = { P, S }</b> mit <b>P = Play/Pause</b> und <b>S = Stop</b>.</p>
+    <div class="grid-2" style="align-items:center">
+      <div class="graph-wrap">
+        <svg class="graph-svg" viewBox="0 0 700 430" role="img" aria-label="Zustandsgraph eines Musikplayers">
+          <defs>
+            <marker id="arrowMusicOverview" markerWidth="10" markerHeight="10" refX="8.5" refY="3.5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L9,3.5 L0,7 Z" fill="#151515"></path></marker>
+          </defs>
+          <path class="transition" d="M35 215 H105" marker-end="url(#arrowMusicOverview)"></path>
+          <circle class="state-circle" cx="165" cy="215" r="52" style="fill:var(--accent)"></circle><circle class="end-circle" cx="165" cy="215" r="44"></circle><text class="state-label" x="165" y="215">Stopp</text>
+          <circle class="state-circle" cx="480" cy="120" r="52" style="fill:var(--blue)"></circle><circle class="end-circle" cx="480" cy="120" r="44"></circle><text class="state-label" x="480" y="120">Play</text>
+          <circle class="state-circle" cx="480" cy="310" r="52" style="fill:var(--warm)"></circle><circle class="end-circle" cx="480" cy="310" r="44"></circle><text class="state-label" x="480" y="310">Pause</text>
+          <path class="transition" d="M214 197 C300 170 355 145 427 128" marker-end="url(#arrowMusicOverview)"></path><rect class="edge-label-bg" x="311" y="149" width="28" height="24" rx="6"></rect><text class="edge-label" x="325" y="161">P</text>
+          <path class="transition" d="M480 173 C480 205 480 230 480 257" marker-end="url(#arrowMusicOverview)"></path><rect class="edge-label-bg" x="492" y="202" width="28" height="24" rx="6"></rect><text class="edge-label" x="506" y="214">P</text>
+          <path class="transition" d="M132 171 C94 123 119 88 165 88 C211 88 236 123 198 171" marker-end="url(#arrowMusicOverview)"></path><rect class="edge-label-bg" x="152" y="82" width="28" height="24" rx="6"></rect><text class="edge-label" x="166" y="94">S</text>
+          <path class="transition" d="M437 88 C345 38 225 48 181 161" marker-end="url(#arrowMusicOverview)"></path><rect class="edge-label-bg" x="300" y="47" width="28" height="24" rx="6"></rect><text class="edge-label" x="314" y="59">S</text>
+          <path class="transition" d="M527 287 C583 250 585 178 527 143" marker-end="url(#arrowMusicOverview)"></path><rect class="edge-label-bg" x="557" y="207" width="28" height="24" rx="6"></rect><text class="edge-label" x="571" y="219">P</text>
+          <path class="transition" d="M437 342 C340 399 225 382 181 269" marker-end="url(#arrowMusicOverview)"></path><rect class="edge-label-bg" x="302" y="360" width="28" height="24" rx="6"></rect><text class="edge-label" x="316" y="372">S</text>
+        </svg>
+      </div>
+      <div class="card">
+        <h3>Warum ist das ein DEA?</h3>
+        <ul>
+          <li>Es gibt genau einen Startzustand.</li>
+          <li>Von jedem Zustand geht für <b>P</b> genau ein Übergang aus.</li>
+          <li>Von jedem Zustand geht für <b>S</b> genau ein Übergang aus.</li>
+          <li>Damit ist für jede Eingabe eindeutig festgelegt, wie es weitergeht.</li>
+          <li>In diesem Beispiel sind alle drei Zustände Endzustände.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>6. Formale Sprachen am Beispiel Morsecode</h2>
+    <p>Ein DEA kann prüfen, ob eine Zeichenkette zu einer festgelegten Sprache gehört.</p>
+    <div class="morse">
+      <div class="card"><b>E</b><span>·</span></div>
+      <div class="card"><b>A</b><span>· −</span></div>
+      <div class="card"><b>N</b><span>− ·</span></div>
+      <div class="card"><b>O</b><span>− − −</span></div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <p style="font-size:21px;margin:.2rem 0"><b>Σ = { · , − }</b></p>
+      <p style="font-size:21px;margin:.2rem 0"><b>L = { · , ·− , −· , −−− }</b></p>
+      <p class="small">Gemeinsame Präfixe können sich Zustände teilen.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>7. Im DEA-Labor</h2>
+    <div class="grid-2">
+      <div class="card blue"><h3>Graph bauen</h3><p>Zustände anlegen, Start- und Endzustände markieren und Übergänge mit Eingabezeichen beschriften.</p></div>
+      <div class="card warm"><h3>Zeichenkette testen</h3><p>Eine Eingabe Schritt für Schritt verfolgen und prüfen, in welchem Zustand der Automat nach dem letzten Zeichen endet.</p></div>
+    </div>
+  </section>
+
+  <section class="summary-box">
+    <strong>Das Wichtigste in einem Satz:</strong>
+    <p>Ein DEA liest eine Zeichenkette Zeichen für Zeichen, folgt dabei immer eindeutig festgelegten Übergängen und akzeptiert die Eingabe genau dann, wenn er nach dem letzten Zeichen in einem Endzustand steht.</p>
+    <div class="chips">
+      <span class="chip">genau 1 Startzustand</span>
+      <span class="chip">eindeutige Übergänge</span>
+      <span class="chip">Alphabet Σ</span>
+      <span class="chip">Endzustand entscheidet</span>
+    </div>
+  </section>
+</main>
+</body>
+</html>

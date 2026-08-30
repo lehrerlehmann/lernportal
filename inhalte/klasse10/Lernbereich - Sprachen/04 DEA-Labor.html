@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 DEA-Labor</title>
+<style>
+:root{
+  --bg:#f7f7f4;
+  --paper:#ffffff;
+  --ink:#151515;
+  --muted:#666;
+  --line:#d7d7d1;
+  --accent:#dce8d4;
+  --accent-strong:#6f8568;
+  --soft:#efefe9;
+  --danger:#b84f4f;
+  --danger-soft:#f4e5e5;
+  --shadow:0 14px 45px rgba(0,0,0,.14);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html,body{margin:0;min-height:100%;font-family:Bahnschrift,"Aptos","Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink)}
+body{overflow:auto}
+button,input{font:inherit}
+.page{width:min(1500px,100%);margin:0 auto;padding:34px clamp(18px,4vw,64px) 60px}
+.kicker{font-size:.9rem;letter-spacing:.14em;font-weight:700;color:#6b7963;margin-bottom:.65rem}
+h1{font-weight:400;font-size:clamp(34px,4vw,64px);line-height:1.04;margin:0 0 1rem}
+.lead{color:var(--muted);font-size:clamp(15px,1.2vw,19px);line-height:1.45;max-width:1050px;margin:0 0 1.6rem}
+.editor-shell{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(310px,.72fr);gap:1.25rem;align-items:start}
+.editor-panel{background:#fff;border:1px solid var(--line);border-radius:22px;padding:clamp(14px,1.4vw,22px)}
+.toolbar{display:flex;gap:.55rem;flex-wrap:wrap;align-items:center;margin-bottom:.8rem}
+.toolbtn,.actionbtn,.menu-btn{
+  appearance:none;border:1px solid #c9c9c2;background:#fff;color:#151515;border-radius:10px;
+  padding:.58rem .82rem;font-size:14px;cursor:pointer;transition:background .12s,border-color .12s,transform .05s
+}
+.toolbtn:hover,.actionbtn:hover,.menu-btn:hover{background:#f2f2ed}
+.toolbtn:active,.actionbtn:active,.menu-btn:active{transform:translateY(1px)}
+.toolbtn.primary{background:var(--accent);border-color:var(--accent-strong);font-weight:700}
+.actionbtn.danger,.menu-btn.danger{color:#8f2f2f}
+.actionbtn.danger:hover,.menu-btn.danger:hover{background:var(--danger-soft);border-color:#d6a9a9}
+.small{font-size:14px;color:var(--muted)}
+#deaCanvas{
+  width:100%;height:min(67vh,670px);min-height:460px;background:#fbfbf8;border:1px dashed #c8c8c0;border-radius:16px;
+  touch-action:none;user-select:none;display:block
+}
+#deaCanvas .editor-state{cursor:grab}
+#deaCanvas .editor-state.dragging{cursor:grabbing}
+#deaCanvas .state-ring{fill:#fff;stroke:#151515;stroke-width:2.3}
+#deaCanvas .end-ring{fill:none;stroke:#151515;stroke-width:2}
+#deaCanvas .active-ring{fill:none;stroke:var(--accent-strong);stroke-width:7;opacity:.55}
+#deaCanvas .selected-ring{fill:none;stroke:#777;stroke-width:2;stroke-dasharray:5 5}
+#deaCanvas .transition-line{fill:none;stroke:#151515;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+#deaCanvas .transition-preview{fill:none;stroke:var(--accent-strong);stroke-width:2.5;stroke-dasharray:7 7;pointer-events:none}
+#deaCanvas .transition-hit{fill:none;stroke:transparent;stroke-width:20;cursor:pointer}
+#deaCanvas .transition-label-group{cursor:grab}
+#deaCanvas .transition-label-group.dragging{cursor:grabbing}
+#deaCanvas .transition-label-bg{fill:#fbfbf8;stroke:#e0e0da;stroke-width:1}
+#deaCanvas .transition-label{font-size:16px;font-weight:700;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
+#deaCanvas .state-text{font-size:17px;font-weight:700;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
+.panel-title{font-size:clamp(22px,2vw,30px);font-weight:500;margin:.2rem 0 .5rem}
+.help-list{font-size:14px;color:#555;margin:.4rem 0 0;padding-left:1.2em;line-height:1.5}
+.tester{margin-top:1.1rem;padding-top:1.1rem;border-top:1px solid var(--line)}
+.tester input{width:100%;border:1px solid #c9c9c2;border-radius:9px;padding:.6rem .7rem;background:#fff}
+.status{background:var(--soft);border-radius:12px;padding:.8rem .9rem;margin-top:.7rem;font-size:14px;line-height:1.45;min-height:60px}
+.charstrip{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.6rem}
+.charstrip span{min-width:28px;text-align:center;padding:.22rem .35rem;border-radius:7px;background:#efefe9;font-weight:700}
+.charstrip span.done{background:var(--accent)}
+.charstrip span.current{outline:2px solid var(--accent-strong)}
+.context-menu{
+  position:fixed;z-index:5000;min-width:210px;background:#fff;border:1px solid #cfcfc8;border-radius:12px;
+  box-shadow:var(--shadow);padding:6px;display:none
+}
+.context-menu.open{display:block}
+.context-title{padding:8px 10px 5px;font-size:12px;color:#777;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.menu-row{display:flex;gap:6px;align-items:center}
+.menu-btn{width:100%;border:0;text-align:left;padding:.58rem .65rem;background:transparent;border-radius:8px}
+.menu-btn.danger{display:flex;justify-content:space-between;align-items:center}
+.menu-sep{height:1px;background:#ecece7;margin:5px 4px}
+.inline-editor{display:flex;gap:6px;padding:5px}
+.inline-editor input{min-width:0;flex:1;border:1px solid #c9c9c2;border-radius:8px;padding:.48rem .55rem}
+.inline-editor button{border:1px solid #c9c9c2;background:#fff;border-radius:8px;padding:.45rem .6rem;cursor:pointer}
+.hintbox{background:var(--accent);border-radius:14px;padding:.8rem .9rem;font-size:14px;line-height:1.45;margin-bottom:1rem}
+kbd{background:#fff;border:1px solid #d8d8d1;border-bottom-width:2px;border-radius:5px;padding:.05rem .3rem;font:inherit;font-size:.9em}
+@media (max-width:980px){
+  .editor-shell{grid-template-columns:1fr}
+  #deaCanvas{height:560px;min-height:460px}
+}
+@media (max-width:620px){
+  .page{padding:24px 14px 44px}
+  #deaCanvas{height:520px;min-height:420px}
+}
+</style>
+</head>
+<body>
+<main class="page">
+  <div class="kicker">AUSPROBIEREN</div>
+  <h1>DEA-Labor: eigenen Zustandsgraphen bauen</h1>
+  <p class="lead">Zustände und Übergänge lassen sich direkt im Graphen bearbeiten. Klicke auf ein Element für das Kontextmenü, halte es gedrückt und ziehe es zum Verschieben.</p>
+
+  <div class="editor-shell">
+    <section class="editor-panel">
+      <div class="toolbar">
+        <button class="toolbtn primary" id="addStateBtn">+ Zustand</button>
+        <button class="actionbtn danger" id="clearGraph">Leeren</button>
+        <span class="small">Tipp: Doppelklick auf freie Fläche fügt ebenfalls einen Zustand hinzu.</span>
+      </div>
+
+      <svg id="deaCanvas" viewBox="0 0 900 520" aria-label="Interaktiver Editor für deterministische endliche Automaten">
+        <defs>
+          <marker id="editorArrow" markerWidth="10" markerHeight="10" refX="8.5" refY="3.5" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L9,3.5 L0,7 Z" fill="#151515"></path>
+          </marker>
+        </defs>
+        <g id="edgeLayer"></g>
+        <g id="previewLayer"></g>
+        <g id="stateLayer"></g>
+      </svg>
+    </section>
+
+    <aside class="editor-panel">
+      <div class="hintbox">
+        <b>Bedienung</b><br>
+        • Zustand anklicken → Umbenennen, Start-/Endzustand, Übergang ziehen, Löschen<br>
+        • Übergangsbeschriftung anklicken → Zeichen ändern oder Übergang löschen<br>
+        • Zustand oder Übergangsbeschriftung gedrückt halten → verschieben<br>
+        • Rechtsklick öffnet dasselbe Menü wie ein normaler Klick
+      </div>
+
+      <div class="tester">
+        <h2 class="panel-title">Zeichenkette testen</h2>
+        <input id="testInput" value="010" placeholder="z. B. 010" autocomplete="off">
+        <div class="toolbar" style="margin-top:.65rem">
+          <button class="actionbtn" id="testReset">Start</button>
+          <button class="actionbtn" id="testNext">Nächstes Zeichen</button>
+          <button class="actionbtn" id="testAll">Ganz testen</button>
+        </div>
+        <div class="charstrip" id="charStrip"></div>
+        <div class="status" id="testStatus">Baue einen Automaten oder lade das Beispiel. Danach kannst du eine Zeichenkette Schritt für Schritt verfolgen.</div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<div id="contextMenu" class="context-menu" role="menu" aria-hidden="true"></div>
+
+<script>
+const svg = document.getElementById('deaCanvas');
+const edgeLayer = document.getElementById('edgeLayer');
+const stateLayer = document.getElementById('stateLayer');
+const previewLayer = document.getElementById('previewLayer');
+const statusBox = document.getElementById('testStatus');
+const charStrip = document.getElementById('charStrip');
+const contextMenu = document.getElementById('contextMenu');
+
+let states=[], transitions=[], nextId=0;
+let selectedId=null, currentStateId=null, testPos=0, testFailed=false;
+let pointerAction=null;
+let addStateArmed=false;
+let transitionDraft=null;
+let suppressClickUntil=0;
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function stateById(id){return states.find(s=>s.id===id)}
+function transitionById(id){return transitions.find(t=>t.id===id)}
+function startState(){return states.find(s=>s.start)}
+function svgPoint(evt){
+  const pt=svg.createSVGPoint(); pt.x=evt.clientX; pt.y=evt.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
+function newTransitionId(){return 't'+Math.random().toString(36).slice(2,10)}
+
+function addState(x,y,label){
+  const id='s'+(nextId++);
+  states.push({id,x,y,label:label||('q'+states.length),start:states.length===0,end:false});
+  selectedId=id;
+  resetTest(false); renderEditor();
+  return id;
+}
+
+function boundaryPoint(a,b,r=44){
+  const dx=b.x-a.x, dy=b.y-a.y, d=Math.hypot(dx,dy)||1;
+  return {x:a.x+dx/d*r,y:a.y+dy/d*r};
+}
+
+function edgeGeometry(t,index){
+  const a=stateById(t.from), b=stateById(t.to);
+  if(!a||!b) return null;
+  const ox=t.labelDx||0, oy=t.labelDy||0;
+  if(a.id===b.id){
+    // label offset also controls the loop's bend and therefore changes the spline
+    const dx=clamp(ox,-150,150), dy=clamp(oy,-110,80);
+    const peakY=a.y-92+dy;
+    const leftX=a.x-70+dx*.22, rightX=a.x+70+dx*.22;
+    return {
+      d:`M ${a.x-27} ${a.y-34} C ${leftX} ${peakY}, ${rightX} ${peakY}, ${a.x+27} ${a.y-34}`,
+      lx:a.x+dx, ly:a.y-82+dy
+    };
+  }
+
+  const p1=boundaryPoint(a,b,46), p2=boundaryPoint(b,a,48);
+  const dx=p2.x-p1.x, dy=p2.y-p1.y, len=Math.hypot(dx,dy)||1;
+  const nx=-dy/len, ny=dx/len;
+  const opposite=transitions.some((u,j)=>j!==index && u.from===t.to && u.to===t.from);
+  const baseBend=opposite ? 42*(t.from<t.to?1:-1) : 0;
+  // moving the label shifts the quadratic control point; this visibly reshapes the spline
+  const midX=(p1.x+p2.x)/2, midY=(p1.y+p2.y)/2;
+  const along=(ox*dx+oy*dy)/len;
+  const normal=(ox*nx+oy*ny);
+  const cx=midX + (dx/len)*along*.15 + nx*(baseBend+normal);
+  const cy=midY + (dy/len)*along*.15 + ny*(baseBend+normal);
+  const useCurve=opposite || Math.abs(normal)>2 || Math.abs(oy)>2 || Math.abs(ox)>2;
+  return {
+    d:useCurve ? `M ${p1.x} ${p1.y} Q ${cx} ${cy} ${p2.x} ${p2.y}` : `M ${p1.x} ${p1.y} L ${p2.x} ${p2.y}`,
+    lx:cx + nx*10, ly:cy + ny*10
+  };
+}
+
+function renderEditor(){
+  edgeLayer.innerHTML='';
+  transitions.forEach((t,i)=>{
+    const ep=edgeGeometry(t,i); if(!ep)return;
+    edgeLayer.insertAdjacentHTML('beforeend',
+      `<g class="editor-transition" data-tid="${t.id}">
+        <path class="transition-line" d="${ep.d}" marker-end="url(#editorArrow)"></path>
+        <path class="transition-hit" d="${ep.d}"></path>
+        <g class="transition-label-group" data-tid="${t.id}" transform="translate(${ep.lx} ${ep.ly})">
+          <rect class="transition-label-bg" x="-18" y="-13" width="36" height="26" rx="7"></rect>
+          <text class="transition-label" x="0" y="1">${esc(t.symbol)}</text>
+        </g>
+      </g>`);
+  });
+
+  stateLayer.innerHTML='';
+  states.forEach(s=>{
+    const selected=s.id===selectedId, active=s.id===currentStateId;
+    const startArrow=s.start?`<path class="transition-line" d="M ${s.x-88} ${s.y} H ${s.x-49}" marker-end="url(#editorArrow)"></path>`:'';
+    const activeRing=active?`<circle class="active-ring" cx="${s.x}" cy="${s.y}" r="52"></circle>`:'';
+    const selRing=selected?`<circle class="selected-ring" cx="${s.x}" cy="${s.y}" r="57"></circle>`:'';
+    const endRing=s.end?`<circle class="end-ring" cx="${s.x}" cy="${s.y}" r="36"></circle>`:'';
+    stateLayer.insertAdjacentHTML('beforeend',
+      `<g class="editor-state" data-id="${s.id}">
+        ${startArrow}${activeRing}${selRing}
+        <circle class="state-ring" cx="${s.x}" cy="${s.y}" r="44"></circle>
+        ${endRing}
+        <text class="state-text" x="${s.x}" y="${s.y}">${esc(s.label)}</text>
+      </g>`);
+  });
+
+  previewLayer.innerHTML='';
+  if(transitionDraft){
+    const source=stateById(transitionDraft.from);
+    if(source){
+      const p2=transitionDraft.toPoint;
+      const p1=boundaryPoint(source,p2,46);
+      previewLayer.innerHTML=`<path class="transition-preview" d="M ${p1.x} ${p1.y} Q ${(p1.x+p2.x)/2} ${(p1.y+p2.y)/2-25} ${p2.x} ${p2.y}"></path>`;
+    }
+  }
+}
+
+function showMenuAt(clientX,clientY,html){
+  contextMenu.innerHTML=html;
+  contextMenu.classList.add('open');
+  contextMenu.setAttribute('aria-hidden','false');
+  requestAnimationFrame(()=>{
+    const r=contextMenu.getBoundingClientRect();
+    let x=clientX+8, y=clientY+8;
+    if(x+r.width>window.innerWidth-8) x=clientX-r.width-8;
+    if(y+r.height>window.innerHeight-8) y=clientY-r.height-8;
+    contextMenu.style.left=Math.max(8,x)+'px';
+    contextMenu.style.top=Math.max(8,y)+'px';
+  });
+}
+function closeMenu(){
+  contextMenu.classList.remove('open');
+  contextMenu.setAttribute('aria-hidden','true');
+}
+
+function openStateMenu(id,clientX,clientY){
+  const s=stateById(id); if(!s)return;
+  selectedId=id; renderEditor();
+  showMenuAt(clientX,clientY,`
+    <div class="context-title">Zustand ${esc(s.label)}</div>
+    <div class="inline-editor">
+      <input id="stateRenameInput" value="${esc(s.label)}" aria-label="Zustand umbenennen">
+      <button id="stateRenameOk">OK</button>
+    </div>
+    <div class="menu-sep"></div>
+    <button class="menu-btn" id="stateStartBtn">${s.start?'✓ ':''}Startzustand</button>
+    <button class="menu-btn" id="stateEndBtn">${s.end?'✓ ':''}Endzustand</button>
+    <button class="menu-btn" id="stateTransitionBtn">→ Übergang ziehen</button>
+    <div class="menu-sep"></div>
+    <button class="menu-btn danger" id="stateDeleteBtn">Zustand löschen <b>×</b></button>`);
+
+  const input=document.getElementById('stateRenameInput');
+  const commitRename=()=>{ const v=input.value.trim(); if(v){s.label=v;renderEditor();} closeMenu(); };
+  document.getElementById('stateRenameOk').onclick=commitRename;
+  input.addEventListener('keydown',e=>{if(e.key==='Enter')commitRename(); if(e.key==='Escape')closeMenu();});
+  document.getElementById('stateStartBtn').onclick=()=>{
+    states.forEach(x=>x.start=false); s.start=true; resetTest(false); renderEditor(); closeMenu();
+  };
+  document.getElementById('stateEndBtn').onclick=()=>{s.end=!s.end;renderEditor();closeMenu();};
+  document.getElementById('stateDeleteBtn').onclick=()=>{
+    states=states.filter(x=>x.id!==id);
+    transitions=transitions.filter(t=>t.from!==id&&t.to!==id);
+    selectedId=null; resetTest(false); renderEditor(); closeMenu();
+  };
+  document.getElementById('stateTransitionBtn').onclick=()=>{
+    closeMenu();
+    transitionDraft={from:id,toPoint:{x:s.x+100,y:s.y},dragging:false,pointerId:null};
+    statusBox.textContent='Drücke den Zustand erneut, ziehe zum Zielzustand und lasse dort los.';
+    renderEditor();
+  };
+  setTimeout(()=>input.focus(),0);
+}
+
+function openTransitionMenu(tid,clientX,clientY){
+  const t=transitionById(tid); if(!t)return;
+  showMenuAt(clientX,clientY,`
+    <div class="context-title">Übergang</div>
+    <div class="inline-editor">
+      <input id="transitionRenameInput" value="${esc(t.symbol)}" maxlength="8" aria-label="Übergang umbenennen">
+      <button id="transitionRenameOk">OK</button>
+    </div>
+    <div class="menu-sep"></div>
+    <button class="menu-btn danger" id="transitionDeleteBtn">Übergang löschen <b>×</b></button>`);
+  const input=document.getElementById('transitionRenameInput');
+  const commitRename=()=>{
+    const v=input.value.trim(); if(!v)return;
+    // DEA: for a source state one symbol may only have one destination
+    transitions=transitions.filter(x=>x.id===tid || !(x.from===t.from && x.symbol===v));
+    t.symbol=v; renderEditor(); resetTest(false); closeMenu();
+  };
+  document.getElementById('transitionRenameOk').onclick=commitRename;
+  input.addEventListener('keydown',e=>{if(e.key==='Enter')commitRename(); if(e.key==='Escape')closeMenu();});
+  document.getElementById('transitionDeleteBtn').onclick=()=>{
+    transitions=transitions.filter(x=>x.id!==tid); resetTest(false); renderEditor(); closeMenu();
+  };
+  setTimeout(()=>{input.focus();input.select();},0);
+}
+
+function createTransition(from,to,symbol='0'){
+  // Replace same source+symbol to keep the DEA deterministic.
+  transitions=transitions.filter(t=>!(t.from===from && t.symbol===symbol));
+  const id=newTransitionId();
+  transitions.push({id,from,to,symbol,labelDx:0,labelDy:0});
+  resetTest(false); renderEditor();
+  return id;
+}
+
+function finishTransitionAt(targetId,evt){
+  if(!transitionDraft)return false;
+  if(!targetId){transitionDraft=null;renderEditor();return true;}
+  const from=transitionDraft.from;
+  const existingSymbols=transitions.filter(t=>t.from===from).map(t=>t.symbol);
+  let suggestion='0';
+  if(existingSymbols.includes('0')&&!existingSymbols.includes('1')) suggestion='1';
+  const tid=createTransition(from,targetId,suggestion);
+  transitionDraft=null; renderEditor();
+  setTimeout(()=>openTransitionMenu(tid,evt.clientX,evt.clientY),0);
+  return true;
+}
+
+function pointerTargetInfo(evt){
+  const stateGroup=evt.target.closest?.('.editor-state');
+  const labelGroup=evt.target.closest?.('.transition-label-group');
+  const edgeGroup=evt.target.closest?.('.editor-transition');
+  return {stateId:stateGroup?.dataset?.id||null, transitionId:labelGroup?.dataset?.tid||edgeGroup?.dataset?.tid||null, onLabel:!!labelGroup};
+}
+
+svg.addEventListener('pointerdown',evt=>{
+  if(evt.button!==0 && evt.button!==2)return;
+  const info=pointerTargetInfo(evt);
+  const p=svgPoint(evt);
+  closeMenu();
+
+  if(transitionDraft){
+    transitionDraft.toPoint=p;
+    if(info.stateId===transitionDraft.from){
+      transitionDraft.dragging=true;
+      transitionDraft.pointerId=evt.pointerId;
+      try{svg.setPointerCapture(evt.pointerId)}catch{}
+      renderEditor();
+    } else if(info.stateId){
+      // Zusätzlich möglich: Zielzustand direkt anklicken.
+      finishTransitionAt(info.stateId,evt);
+    } else {
+      renderEditor();
+    }
+    return;
+  }
+
+  if(info.stateId){
+    const s=stateById(info.stateId); if(!s)return;
+    selectedId=s.id;
+    pointerAction={kind:'state',id:s.id,pointerId:evt.pointerId,startClient:{x:evt.clientX,y:evt.clientY},startSvg:p,orig:{x:s.x,y:s.y},moved:false};
+    try{svg.setPointerCapture(evt.pointerId)}catch{}
+    renderEditor();
+    return;
+  }
+
+  if(info.transitionId && info.onLabel){
+    const t=transitionById(info.transitionId); if(!t)return;
+    pointerAction={kind:'label',id:t.id,pointerId:evt.pointerId,startClient:{x:evt.clientX,y:evt.clientY},startSvg:p,orig:{dx:t.labelDx||0,dy:t.labelDy||0},moved:false};
+    try{svg.setPointerCapture(evt.pointerId)}catch{}
+    return;
+  }
+
+  if(addStateArmed){
+    addState(p.x,p.y); addStateArmed=false; document.getElementById('addStateBtn').classList.remove('primary');
+    return;
+  }
+
+  selectedId=null; renderEditor();
+});
+
+svg.addEventListener('pointermove',evt=>{
+  const p=svgPoint(evt);
+  if(transitionDraft){transitionDraft.toPoint=p;renderEditor();return;}
+  if(!pointerAction)return;
+  const dist=Math.hypot(evt.clientX-pointerAction.startClient.x,evt.clientY-pointerAction.startClient.y);
+  if(dist>5) pointerAction.moved=true;
+  if(!pointerAction.moved)return;
+
+  if(pointerAction.kind==='state'){
+    const s=stateById(pointerAction.id); if(!s)return;
+    s.x=clamp(pointerAction.orig.x+(p.x-pointerAction.startSvg.x),65,835);
+    s.y=clamp(pointerAction.orig.y+(p.y-pointerAction.startSvg.y),65,455);
+    renderEditor();
+  } else if(pointerAction.kind==='label'){
+    const t=transitionById(pointerAction.id); if(!t)return;
+    t.labelDx=pointerAction.orig.dx+(p.x-pointerAction.startSvg.x);
+    t.labelDy=pointerAction.orig.dy+(p.y-pointerAction.startSvg.y);
+    renderEditor();
+  }
+});
+
+svg.addEventListener('pointerup',evt=>{
+  if(transitionDraft?.dragging && transitionDraft.pointerId===evt.pointerId){
+    let target=document.elementFromPoint(evt.clientX,evt.clientY)?.closest?.('.editor-state');
+    const targetId=target?.dataset?.id||null;
+    try{svg.releasePointerCapture(evt.pointerId)}catch{}
+    transitionDraft.dragging=false;
+    if(targetId) finishTransitionAt(targetId,evt);
+    else { transitionDraft=null; renderEditor(); statusBox.textContent='Übergang abgebrochen: kein Zielzustand getroffen.'; }
+    return;
+  }
+  if(!pointerAction)return;
+  const action=pointerAction; pointerAction=null;
+  try{svg.releasePointerCapture(evt.pointerId)}catch{}
+  if(action.moved){suppressClickUntil=performance.now()+180; return;}
+  if(evt.button===0){
+    if(action.kind==='state') openStateMenu(action.id,evt.clientX,evt.clientY);
+    if(action.kind==='label') openTransitionMenu(action.id,evt.clientX,evt.clientY);
+  }
+});
+
+svg.addEventListener('contextmenu',evt=>{
+  evt.preventDefault();
+  const info=pointerTargetInfo(evt);
+  if(info.stateId) openStateMenu(info.stateId,evt.clientX,evt.clientY);
+  else if(info.transitionId) openTransitionMenu(info.transitionId,evt.clientX,evt.clientY);
+});
+
+svg.addEventListener('click',evt=>{
+  if(performance.now()<suppressClickUntil)return;
+  const info=pointerTargetInfo(evt);
+  if(info.transitionId && !info.onLabel){
+    openTransitionMenu(info.transitionId,evt.clientX,evt.clientY);
+  }
+});
+
+svg.addEventListener('dblclick',evt=>{
+  const info=pointerTargetInfo(evt); if(info.stateId||info.transitionId)return;
+  const p=svgPoint(evt); addState(p.x,p.y);
+});
+
+document.addEventListener('pointerdown',evt=>{
+  if(contextMenu.classList.contains('open') && !contextMenu.contains(evt.target) && !svg.contains(evt.target)) closeMenu();
+});
+document.addEventListener('keydown',evt=>{
+  if(evt.key==='Escape'){ closeMenu(); transitionDraft=null; renderEditor(); }
+  if((evt.key==='Delete'||evt.key==='Backspace') && selectedId && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){
+    states=states.filter(s=>s.id!==selectedId);
+    transitions=transitions.filter(t=>t.from!==selectedId&&t.to!==selectedId);
+    selectedId=null; resetTest(false); renderEditor();
+  }
+});
+
+window.addEventListener('scroll',closeMenu,{passive:true});
+window.addEventListener('resize',closeMenu);
+
+document.getElementById('addStateBtn').onclick=()=>{
+  addStateArmed=!addStateArmed;
+  document.getElementById('addStateBtn').classList.toggle('primary',addStateArmed);
+  statusBox.textContent=addStateArmed?'Klicke auf eine freie Stelle im Zeichenfeld, um einen Zustand anzulegen.':'Zustand hinzufügen abgebrochen.';
+};
+
+document.getElementById('loadExample').onclick=loadExample;
+document.getElementById('clearGraph').onclick=()=>{
+  if(states.length && !confirm('Den gesamten Graphen wirklich leeren?')) return;
+  states=[];transitions=[];selectedId=null;nextId=0;transitionDraft=null;resetTest(false);renderEditor();
+  statusBox.textContent='Leere Zeichenfläche. Mit „+ Zustand“ oder per Doppelklick kannst du beginnen.';
+};
+
+function loadExample(){
+  nextId=3;
+  states=[
+    {id:'s0',x:185,y:260,label:'q₀',start:true,end:false},
+    {id:'s1',x:455,y:155,label:'q₁',start:false,end:true},
+    {id:'s2',x:690,y:300,label:'q₂',start:false,end:false}
+  ];
+  transitions=[
+    {id:newTransitionId(),from:'s0',to:'s1',symbol:'0',labelDx:0,labelDy:0},
+    {id:newTransitionId(),from:'s0',to:'s2',symbol:'1',labelDx:0,labelDy:0},
+    {id:newTransitionId(),from:'s1',to:'s1',symbol:'0',labelDx:0,labelDy:0},
+    {id:newTransitionId(),from:'s1',to:'s2',symbol:'1',labelDx:0,labelDy:0},
+    {id:newTransitionId(),from:'s2',to:'s1',symbol:'0',labelDx:0,labelDy:0},
+    {id:newTransitionId(),from:'s2',to:'s2',symbol:'1',labelDx:0,labelDy:0}
+  ];
+  selectedId='s0';resetTest(false);renderEditor();
+  statusBox.textContent='Beispiel geladen: ein vollständiger DEA über {0,1}.';
+}
+
+function resetTest(show=true){
+  const st=startState();testPos=0;currentStateId=st?.id||null;testFailed=false;
+  renderCharStrip();renderEditor();
+  if(show)statusBox.textContent=st?`Start in ${st.label}.`:'Es ist kein Startzustand festgelegt.';
+}
+function renderCharStrip(){
+  const chars=[...document.getElementById('testInput').value];
+  charStrip.innerHTML=chars.map((c,i)=>`<span class="${i<testPos?'done':i===testPos&&!testFailed?'current':''}">${esc(c)}</span>`).join('');
+}
+function nextTestStep(){
+  if(testFailed)return;
+  const input=[...document.getElementById('testInput').value];
+  if(currentStateId===null){resetTest();if(currentStateId===null)return}
+  if(testPos>=input.length){
+    const s=stateById(currentStateId);
+    statusBox.innerHTML=s?.end?`Fertig in <b>${esc(s.label)}</b> → Zeichenkette wird <b>akzeptiert ✓</b>.`:`Fertig in <b>${esc(s?.label||'?')}</b> → kein Endzustand, also <b>verworfen ✗</b>.`;
+    return;
+  }
+  const symbol=input[testPos],options=transitions.filter(t=>t.from===currentStateId&&t.symbol===symbol);
+  if(options.length===0){
+    const s=stateById(currentStateId);statusBox.innerHTML=`Bei Zeichen <b>${esc(symbol)}</b> gibt es von <b>${esc(s?.label||'?')}</b> keinen Übergang.`;
+    testFailed=true;renderCharStrip();return;
+  }
+  if(options.length>1){
+    statusBox.innerHTML=`Für <b>${esc(symbol)}</b> gibt es mehrere mögliche Übergänge. Der Graph ist an dieser Stelle <b>nicht deterministisch</b>.`;
+    testFailed=true;renderCharStrip();return;
+  }
+  const from=stateById(currentStateId),tr=options[0],to=stateById(tr.to);
+  currentStateId=tr.to;testPos++;renderCharStrip();renderEditor();
+  statusBox.innerHTML=`Zeichen <b>${esc(symbol)}</b>: ${esc(from.label)} → <b>${esc(to.label)}</b>.`;
+  if(testPos>=input.length)statusBox.innerHTML+=to.end?` Ende erreicht → <b>akzeptiert ✓</b>.`:` Ende erreicht → <b>verworfen ✗</b>.`;
+}
+
+document.getElementById('testReset').onclick=()=>resetTest(true);
+document.getElementById('testNext').onclick=nextTestStep;
+document.getElementById('testAll').onclick=()=>{
+  resetTest(false);
+  const n=[...document.getElementById('testInput').value].length;
+  for(let k=0;k<=n&&!testFailed;k++)nextTestStep();
+};
+document.getElementById('testInput').addEventListener('input',()=>resetTest(false));
+
+loadExample();
+</script>
+</body>
+</html>
