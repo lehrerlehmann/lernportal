@@ -1,0 +1,1992 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>06 Syntax und Semantik der Schachnotation</title>
+<style>
+  :root{
+    --bg:#f5f6f8;
+    --card:#ffffff;
+    --text:#20242c;
+    --muted:#687080;
+    --line:#d9dee7;
+    --accent:#3157d5;
+    --accent-soft:#eef2ff;
+    --light:#edf0f4;
+    --dark:#8995a8;
+    --ok:#18794e;
+    --error:#b42318;
+    --shadow:0 10px 30px rgba(28,35,48,.08);
+    --radius:18px;
+  }
+
+  *{box-sizing:border-box}
+
+  html,body{
+    margin:0;
+    padding:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  }
+
+  body{padding:24px}
+
+  .page{
+    width:min(1120px,100%);
+    margin:0 auto;
+  }
+
+  h1{
+    margin:0 0 14px;
+    font-size:clamp(1.8rem,4vw,2.7rem);
+    letter-spacing:-.035em;
+  }
+
+  h2{
+    margin:0 0 14px;
+    font-size:1.35rem;
+  }
+
+  .info{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:12px 14px;
+    margin-bottom:18px;
+    border:1px solid #d8e0ff;
+    border-radius:14px;
+    background:var(--accent-soft);
+    color:#294290;
+    font-size:.95rem;
+  }
+
+  .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--accent);
+    flex:0 0 auto;
+  }
+
+  .game-layout{
+    display:grid;
+    grid-template-columns:minmax(320px,580px) minmax(230px,1fr);
+    gap:20px;
+    align-items:stretch;
+  }
+
+  .board-card,.notation-card,.task-card,.challenge-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+  }
+
+  .board-card{padding:14px}
+
+  .hover-letter{
+    height:48px;
+    margin-bottom:10px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    display:grid;
+    place-items:center;
+    background:#fff;
+    font:800 1.45rem/1 "Cascadia Code",Consolas,monospace;
+    color:var(--accent);
+    transition:.15s ease;
+  }
+
+  .hover-letter.empty{
+    color:#a2a9b5;
+  }
+
+  .board{
+    width:100%;
+    aspect-ratio:1/1;
+    display:grid;
+    grid-template-columns:repeat(8,minmax(0,1fr));
+    grid-template-rows:repeat(8,minmax(0,1fr));
+    overflow:hidden;
+    border-radius:12px;
+    border:1px solid #cbd2dc;
+    user-select:none;
+  }
+
+  .square{
+    position:relative;
+    min-width:0;
+    min-height:0;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:clamp(30px,6vw,58px);
+    line-height:1;
+  }
+
+  .light{background:var(--light)}
+  .dark{background:var(--dark)}
+
+  .square.selected{
+    outline:4px solid var(--accent);
+    outline-offset:-4px;
+  }
+
+  .square.legal::after{
+    content:"";
+    position:absolute;
+    width:18%;
+    aspect-ratio:1;
+    border-radius:50%;
+    background:rgba(49,87,213,.34);
+    pointer-events:none;
+  }
+
+  .square.legal.capture::after{
+    width:72%;
+    background:transparent;
+    border:4px solid rgba(49,87,213,.42);
+  }
+
+  .piece{
+    position:relative;
+    z-index:2;
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:grab;
+  }
+
+  .piece:active{cursor:grabbing}
+
+  .coord{
+    position:absolute;
+    z-index:3;
+    pointer-events:none;
+    font-size:10px;
+    font-weight:800;
+    opacity:.68;
+  }
+
+  .rank{left:4px;top:3px}
+  .file{right:4px;bottom:2px}
+
+  .notation-card{
+    padding:16px;
+    min-height:100%;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .notation-title{
+    margin:0 0 10px;
+    font-weight:750;
+  }
+
+  .moves{
+    flex:1;
+    min-height:380px;
+    padding:10px 0;
+    overflow:auto;
+  }
+
+  .move-row{
+    display:grid;
+    grid-template-columns:34px 1fr 1fr;
+    gap:7px;
+    align-items:center;
+    min-height:34px;
+    padding:4px 0;
+    border-bottom:1px solid #eef0f4;
+    font-family:"Cascadia Code",Consolas,monospace;
+    font-size:.92rem;
+  }
+
+  .move-no{color:var(--muted);font-family:inherit}
+  .move{font-weight:700}
+
+  .reset{
+    margin-top:10px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:9px 12px;
+    background:#fff;
+    font:600 .9rem/1 system-ui,sans-serif;
+    cursor:pointer;
+  }
+  .reset:hover{background:#f7f8fa}
+
+  .divider{
+    height:1px;
+    background:var(--line);
+    margin:34px 0;
+  }
+
+  .tasks{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+  }
+
+  .task-card{
+    padding:18px;
+  }
+
+  .task-label{
+    margin-bottom:10px;
+    font-size:1.05rem;
+    font-weight:800;
+  }
+
+  .code-example{
+    display:inline-block;
+    margin:2px 0 14px;
+    padding:8px 11px;
+    border-radius:9px;
+    background:#f3f4f7;
+    border:1px solid var(--line);
+    font:750 1rem/1.2 "Cascadia Code",Consolas,monospace;
+  }
+
+  .question{
+    margin:0;
+    line-height:1.5;
+  }
+
+  .final-question{
+    margin-top:16px;
+    padding:18px;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:#fff;
+    box-shadow:var(--shadow);
+    line-height:1.5;
+  }
+
+  .challenge-card{
+    padding:18px;
+  }
+
+  .challenge-layout{
+    display:grid;
+    grid-template-columns:minmax(300px,500px) 1fr;
+    gap:20px;
+    align-items:start;
+  }
+
+  .challenge-board{
+    pointer-events:none;
+  }
+
+  .challenge-side{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .challenge-side p{
+    margin:0 0 4px;
+    line-height:1.5;
+  }
+
+  .move-input{
+    width:100%;
+    border:2px solid var(--line);
+    border-radius:12px;
+    padding:12px 13px;
+    background:white;
+    color:var(--text);
+    font:750 1rem/1.3 "Cascadia Code",Consolas,monospace;
+    outline:none;
+  }
+
+  .move-input:focus{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(49,87,213,.10);
+  }
+
+  .feedback{
+    min-height:22px;
+    font-size:.9rem;
+    color:var(--muted);
+  }
+
+  .feedback.ok{color:var(--ok);font-weight:700}
+  .feedback.error{color:var(--error)}
+
+  .challenge-history{
+    display:grid;
+    gap:0;
+    min-height:32px;
+    border-top:1px solid #eef0f4;
+    margin-top:2px;
+  }
+
+  .challenge-move-row{
+    display:grid;
+    grid-template-columns:34px 1fr 1fr;
+    gap:7px;
+    align-items:center;
+    min-height:34px;
+    padding:4px 0;
+    border-bottom:1px solid #eef0f4;
+    font-family:"Cascadia Code",Consolas,monospace;
+    font-size:.92rem;
+  }
+
+  .challenge-move-no{
+    color:var(--muted);
+  }
+
+  .challenge-move{
+    font-weight:700;
+  }
+
+
+  .stop-note{
+    margin-top:14px;
+    padding:12px 13px;
+    border-radius:12px;
+    background:var(--accent-soft);
+    color:#294290;
+    border:1px solid #d8e0ff;
+    font-weight:750;
+    line-height:1.4;
+  }
+
+  .lesson-question{
+    margin-top:16px;
+    padding:18px;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:#fff;
+    box-shadow:var(--shadow);
+    line-height:1.55;
+  }
+
+  .bonus{
+    margin-top:34px;
+    padding:22px;
+    border:2px dashed #8c72cf;
+    border-radius:22px;
+    background:linear-gradient(180deg,#faf8ff 0%,#f6f3ff 100%);
+    box-shadow:0 12px 34px rgba(83,62,135,.10);
+  }
+
+  .bonus-kicker{
+    display:inline-block;
+    margin-bottom:8px;
+    padding:5px 9px;
+    border-radius:999px;
+    background:#ebe4ff;
+    color:#5a4194;
+    font-size:.78rem;
+    font-weight:850;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+  }
+
+  .bonus h2{
+    margin-bottom:7px;
+  }
+
+  .bonus-intro{
+    margin:0 0 18px;
+    color:#625b70;
+    line-height:1.5;
+  }
+
+  .bonus-layout{
+    display:grid;
+    grid-template-columns:minmax(300px,520px) minmax(260px,1fr);
+    gap:20px;
+    align-items:start;
+  }
+
+  .bonus-side{
+    background:rgba(255,255,255,.72);
+    border:1px solid #ddd5f0;
+    border-radius:16px;
+    padding:16px;
+  }
+
+  .bonus-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:12px;
+  }
+
+  .bonus-title{
+    font-weight:850;
+  }
+
+  .bonus-progress{
+    color:#6d617f;
+    font-size:.86rem;
+    font-weight:700;
+  }
+
+  .san-line{
+    display:grid;
+    gap:5px;
+    min-height:42px;
+    padding:10px;
+    border:1px solid #d8d0eb;
+    border-radius:12px;
+    background:#fff;
+    margin-bottom:12px;
+  }
+
+  .san-row{
+    display:grid;
+    grid-template-columns:32px 1fr 1fr;
+    gap:7px;
+    align-items:center;
+    min-height:34px;
+  }
+
+  .san-number{
+    color:#786c88;
+    font:750 .86rem/1 "Cascadia Code",Consolas,monospace;
+  }
+
+  .san-token{
+    padding:7px 9px;
+    border-radius:8px;
+    background:#f0edf6;
+    border:1px solid #ded7e9;
+    color:#494151;
+    font:800 .9rem/1 "Cascadia Code",Consolas,monospace;
+    transition:.15s ease;
+  }
+
+  .san-token.current{
+    outline:2px solid #8c72cf;
+    outline-offset:1px;
+    background:#fff;
+  }
+
+  .san-token.done{
+    background:#e7f6ee;
+    border-color:#a9dec2;
+    color:#16734a;
+  }
+
+  .bonus-feedback{
+    min-height:24px;
+    margin:9px 0;
+    color:#6d617f;
+    font-size:.9rem;
+    line-height:1.4;
+  }
+
+  .bonus-feedback.error{
+    color:var(--error);
+  }
+
+  .bonus-feedback.ok{
+    color:var(--ok);
+    font-weight:750;
+  }
+
+
+  .bonus-nav{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-top:10px;
+  }
+
+  .bonus-nav button{
+    border:1px solid #d8d0eb;
+    border-radius:10px;
+    padding:10px 12px;
+    background:#fff;
+    color:#5f5275;
+    font:750 .9rem/1 system-ui,sans-serif;
+    cursor:pointer;
+  }
+
+  .bonus-nav button:hover{
+    background:#f4f0fb;
+  }
+
+  .bonus-nav button:disabled{
+    opacity:.4;
+    cursor:default;
+    background:#f7f5fa;
+  }
+
+  .bonus-next{
+    display:none;
+    width:100%;
+    margin-top:8px;
+    border:0;
+    border-radius:11px;
+    padding:11px 13px;
+    background:#6f54ae;
+    color:#fff;
+    font:750 .92rem/1 system-ui,sans-serif;
+    cursor:pointer;
+  }
+
+  .bonus-next.show{
+    display:block;
+  }
+
+  .bonus-board-wrap{
+    position:relative;
+    width:100%;
+  }
+
+  .promotion-picker{
+    position:absolute;
+    z-index:30;
+    display:none;
+    grid-template-columns:repeat(4,36px);
+    gap:5px;
+    padding:6px;
+    border:1px solid #cfc5e8;
+    border-radius:12px;
+    background:rgba(255,255,255,.97);
+    box-shadow:0 10px 28px rgba(55,42,88,.22);
+    transform:translate(-50%,-50%);
+  }
+
+  .promotion-picker.show{
+    display:grid;
+  }
+
+  .promotion-picker button{
+    width:36px;
+    height:36px;
+    display:grid;
+    place-items:center;
+    border:1px solid #d8d0eb;
+    border-radius:8px;
+    background:white;
+    padding:0;
+    font-size:1.35rem;
+    cursor:pointer;
+  }
+
+  .promotion-picker button:hover{
+    background:#f1ecfb;
+    border-color:#a996d6;
+  }
+
+  .modal-backdrop{
+    position:fixed;
+    inset:0;
+    z-index:50;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+    background:rgba(25,27,34,.45);
+  }
+
+  .modal-backdrop.show{
+    display:flex;
+  }
+
+  .modal{
+    width:min(440px,100%);
+    background:#fff;
+    border-radius:18px;
+    padding:20px;
+    box-shadow:0 20px 60px rgba(0,0,0,.22);
+    border:1px solid var(--line);
+  }
+
+  .modal h3{
+    margin:0 0 8px;
+  }
+
+  .modal p{
+    margin:0;
+    line-height:1.55;
+    color:#505867;
+  }
+
+  .modal button{
+    width:100%;
+    margin-top:16px;
+    border:0;
+    border-radius:10px;
+    padding:10px 12px;
+    background:var(--accent);
+    color:white;
+    font:700 .92rem/1 system-ui,sans-serif;
+    cursor:pointer;
+  }
+
+  @media(max-width:850px){
+    .bonus-layout{grid-template-columns:1fr}
+  }
+
+  @media(max-width:850px){
+    .game-layout,.challenge-layout{grid-template-columns:1fr}
+    .moves{min-height:140px}
+    .tasks{grid-template-columns:1fr}
+  }
+
+  @media(max-width:520px){
+    body{padding:12px}
+    .board-card,.notation-card,.task-card,.challenge-card{border-radius:14px}
+  }
+</style>
+<link rel="stylesheet" href="../../kurse.css" data-lernportal-style>
+</head>
+<body>
+
+<nav class="lp-navbar">
+    <a class="lp-back" href="index.html">&larr; Zur&uuml;ck</a>
+    <a class="lp-home" href="../../index.html">Lernportal</a>
+</nav>
+
+<main class="page">
+  <h1>Schachnotation</h1>
+
+  <div class="info">
+    <span class="dot"></span>
+    <span>Bewege den Mauszeiger über eine Figur, um ihren Buchstaben in der Schachnotation zu sehen.</span>
+  </div>
+
+  <section class="game-layout">
+    <div class="board-card">
+      <div id="hoverLetter" class="hover-letter empty">–</div>
+      <div id="mainBoard" class="board"></div>
+    </div>
+
+    <aside class="notation-card">
+      <div class="notation-title">Notation</div>
+      <div id="moveList" class="moves"></div>
+      <button id="resetMain" class="reset">Neu starten</button>
+    </aside>
+  </section>
+
+
+  <div class="lesson-question">
+    <strong>Aufgabe:</strong> Erkläre, wie sich die Schachnotation zusammensetzt. Warum wird statt <strong>-</strong> manchmal auch <strong>x</strong> geschrieben? Warum haben nicht alle Figuren einen eigenen Buchstaben?
+  </div>
+
+  <div class="lesson-question">
+    <strong>Aufgabe:</strong> Argumentiere, ob die Entwicklung der Schachnotation ein sinnvoller Einsatz formaler Sprache ist.
+  </div>
+
+  <div class="divider"></div>
+
+  <section>
+    <h2>Syntax und Semantik</h2>
+
+    <div class="tasks">
+      <article class="task-card">
+        <div class="task-label">Syntax</div>
+        <div class="code-example">Sg1f3</div>
+        <p class="question"><strong>Aufgabe:</strong> Beschreibe, was den Fehler in der Schachnotation produziert hat.</p>
+      </article>
+
+      <article class="task-card">
+        <div class="task-label">Semantik</div>
+        <div class="code-example">Ke1-e3</div>
+        <p class="question"><strong>Aufgabe:</strong> Beschreibe, warum diese Schachnotation in der Startstellung nicht ausgeführt werden kann.</p>
+      </article>
+    </div>
+
+    <div class="final-question">
+      <strong>Aufgabe:</strong> Formuliere eine Beschreibung, was die Begriffe <strong>Syntax</strong> und <strong>Semantik</strong> bei Sprachen bedeuten.
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section class="challenge-card">
+    <h2>Schachnotation anwenden</h2>
+
+    <div class="challenge-layout">
+      <div id="challengeBoard" class="board challenge-board"></div>
+
+      <div class="challenge-side">
+        <p><strong>Aufgabe:</strong> Schlage mit Hilfe der Schachnotation eine schwarze Figur, die kein Bauer ist. Bereite den Schlag über mehrere Züge vor.</p>
+        <input
+          id="challengeInput"
+          class="move-input"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="Schachnotation eingeben"
+          aria-label="Schachnotation eingeben"
+        >
+        <div id="challengeFeedback" class="feedback"></div>
+        <div id="challengeHistory" class="challenge-history"></div>
+        <button id="resetChallenge" class="reset">Aufgabe zurücksetzen</button>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="bonus">
+    <div class="bonus-kicker">Zusatz · optional</div>
+    <h2>Zusatz – Vereinfachung der Schachnotation</h2>
+    <p class="bonus-intro">Setze die angegebene verkürzte Schachnotation auf dem Brett nach. Du kannst jede Figur auswählen – ausgeführt wird aber nur der jeweils passende nächste Zug.</p>
+
+    <div class="bonus-layout">
+      <div class="bonus-board-wrap">
+        <div id="bonusBoard" class="board"></div>
+
+        <div id="promotionPicker" class="promotion-picker" aria-label="Umwandlungsfigur auswählen">
+          <button data-promote="Q" title="Dame">♕</button>
+          <button data-promote="R" title="Turm">♖</button>
+          <button data-promote="B" title="Läufer">♗</button>
+          <button data-promote="N" title="Springer">♘</button>
+        </div>
+      </div>
+
+      <div class="bonus-side">
+        <div class="bonus-head">
+          <div id="bonusTitle" class="bonus-title">Aufgabe 1</div>
+          <div id="bonusProgress" class="bonus-progress">1 von 4</div>
+        </div>
+
+        <div id="sanLine" class="san-line"></div>
+        <div id="bonusFeedback" class="bonus-feedback">Wähle eine Figur und setze den ersten Zug nach.</div>
+
+        <div class="bonus-nav">
+          <button id="bonusPrev">← Zurück</button>
+          <button id="bonusForward">Weiter →</button>
+        </div>
+
+        <button id="bonusNext" class="bonus-next">Nächste Aufgabe</button>
+      </div>
+    </div>
+
+    <div class="lesson-question" style="margin-top:18px; box-shadow:none;">
+      <strong>Aufgabe:</strong> Erläutere, warum auch diese Art der Schachnotation möglich ist.
+    </div>
+  </section>
+
+  <div id="epModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="epTitle">
+    <div class="modal">
+      <h3 id="epTitle">En passant</h3>
+      <p>Beim En-passant-Schlag darf ein Bauer einen gegnerischen Bauern schräg schlagen, nachdem dieser direkt neben ihm in einem Zug zwei Felder vorgerückt ist. Der Schlag ist nur unmittelbar im nächsten Zug möglich.</p>
+      <button id="closeEpModal">Verstanden</button>
+    </div>
+  </div>
+
+</main>
+
+<script>
+(() => {
+  const SYMBOLS = {
+    K:'♔', Q:'♕', R:'♖', B:'♗', N:'♘', P:'♙',
+    k:'♚', q:'♛', r:'♜', b:'♝', n:'♞', p:'♟'
+  };
+
+  // Deutsche Figurenbuchstaben für die ausführliche Notation.
+  const LETTER = {
+    K:'K', Q:'D', R:'T', B:'L', N:'S', P:'',
+    k:'K', q:'D', r:'T', b:'L', n:'S', p:''
+  };
+
+  const startBoard = [
+    'r','n','b','q','k','b','n','r',
+    'p','p','p','p','p','p','p','p',
+    null,null,null,null,null,null,null,null,
+    null,null,null,null,null,null,null,null,
+    null,null,null,null,null,null,null,null,
+    null,null,null,null,null,null,null,null,
+    'P','P','P','P','P','P','P','P',
+    'R','N','B','Q','K','B','N','R'
+  ];
+
+  function newState(board = startBoard) {
+    return {
+      board:[...board],
+      turn:'w',
+      castling:'KQkq',
+      ep:null,
+      halfmove:0,
+      fullmove:1
+    };
+  }
+
+  function cloneState(s){
+    return {
+      board:[...s.board],
+      turn:s.turn,
+      castling:s.castling,
+      ep:s.ep,
+      halfmove:s.halfmove,
+      fullmove:s.fullmove
+    };
+  }
+
+  function idx(file, rank){
+    return (8-rank)*8 + file;
+  }
+
+  function fileOf(i){ return i%8; }
+  function rankOf(i){ return 8-Math.floor(i/8); }
+
+  function squareName(i){
+    return 'abcdefgh'[fileOf(i)] + rankOf(i);
+  }
+
+  function parseSquare(s){
+    if(!/^[a-h][1-8]$/.test(s)) return -1;
+    return idx(s.charCodeAt(0)-97, Number(s[1]));
+  }
+
+  function colorOf(piece){
+    if(!piece) return null;
+    return piece === piece.toUpperCase() ? 'w' : 'b';
+  }
+
+  function enemy(color){ return color === 'w' ? 'b' : 'w'; }
+
+  function inside(f,r){
+    return f>=0 && f<8 && r>=1 && r<=8;
+  }
+
+  function removeCastling(state, ch){
+    state.castling = state.castling.replace(ch,'');
+  }
+
+  function isSquareAttacked(state, target, byColor){
+    const tf = fileOf(target);
+    const tr = rankOf(target);
+
+    // Bauern
+    const pawn = byColor === 'w' ? 'P' : 'p';
+    const pawnSourceRank = byColor === 'w' ? tr-1 : tr+1;
+    for(const df of [-1,1]){
+      const sf = tf-df;
+      if(inside(sf,pawnSourceRank)){
+        const si = idx(sf,pawnSourceRank);
+        if(state.board[si] === pawn) return true;
+      }
+    }
+
+    // Springer
+    const knight = byColor === 'w' ? 'N' : 'n';
+    for(const [df,dr] of [[1,2],[2,1],[2,-1],[1,-2],[-1,-2],[-2,-1],[-2,1],[-1,2]]){
+      const f=tf+df, r=tr+dr;
+      if(inside(f,r) && state.board[idx(f,r)]===knight) return true;
+    }
+
+    // König
+    const king = byColor === 'w' ? 'K' : 'k';
+    for(let df=-1;df<=1;df++){
+      for(let dr=-1;dr<=1;dr++){
+        if(!df && !dr) continue;
+        const f=tf+df, r=tr+dr;
+        if(inside(f,r) && state.board[idx(f,r)]===king) return true;
+      }
+    }
+
+    // Gleitende Figuren
+    const rook = byColor === 'w' ? 'R':'r';
+    const bishop = byColor === 'w' ? 'B':'b';
+    const queen = byColor === 'w' ? 'Q':'q';
+
+    for(const [df,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){
+      let f=tf+df, r=tr+dr;
+      while(inside(f,r)){
+        const p=state.board[idx(f,r)];
+        if(p){
+          if(p===rook || p===queen) return true;
+          break;
+        }
+        f+=df; r+=dr;
+      }
+    }
+
+    for(const [df,dr] of [[1,1],[1,-1],[-1,1],[-1,-1]]){
+      let f=tf+df, r=tr+dr;
+      while(inside(f,r)){
+        const p=state.board[idx(f,r)];
+        if(p){
+          if(p===bishop || p===queen) return true;
+          break;
+        }
+        f+=df; r+=dr;
+      }
+    }
+
+    return false;
+  }
+
+  function kingIndex(state,color){
+    const king = color==='w' ? 'K':'k';
+    return state.board.indexOf(king);
+  }
+
+  function inCheck(state,color){
+    const k = kingIndex(state,color);
+    return k>=0 && isSquareAttacked(state,k,enemy(color));
+  }
+
+  function addSlideMoves(state, from, moves, dirs){
+    const piece = state.board[from];
+    const color = colorOf(piece);
+    const f0=fileOf(from), r0=rankOf(from);
+
+    for(const [df,dr] of dirs){
+      let f=f0+df, r=r0+dr;
+      while(inside(f,r)){
+        const to=idx(f,r);
+        const target=state.board[to];
+        if(!target){
+          moves.push({from,to,capture:false});
+        }else{
+          if(colorOf(target)!==color) moves.push({from,to,capture:true});
+          break;
+        }
+        f+=df; r+=dr;
+      }
+    }
+  }
+
+  function pseudoMovesFrom(state, from){
+    const piece=state.board[from];
+    if(!piece) return [];
+    const color=colorOf(piece);
+    const type=piece.toUpperCase();
+    const f=fileOf(from), r=rankOf(from);
+    const moves=[];
+
+    if(type==='P'){
+      const dir=color==='w'?1:-1;
+      const startRank=color==='w'?2:7;
+      const promotionRank=color==='w'?8:1;
+
+      const oneR=r+dir;
+      if(inside(f,oneR)){
+        const one=idx(f,oneR);
+        if(!state.board[one]){
+          moves.push({from,to:one,capture:false,promotion:oneR===promotionRank});
+          const twoR=r+2*dir;
+          if(r===startRank && inside(f,twoR)){
+            const two=idx(f,twoR);
+            if(!state.board[two]) moves.push({from,to:two,capture:false});
+          }
+        }
+      }
+
+      for(const df of [-1,1]){
+        const cf=f+df, cr=r+dir;
+        if(!inside(cf,cr)) continue;
+        const to=idx(cf,cr);
+        const target=state.board[to];
+        if(target && colorOf(target)!==color){
+          moves.push({from,to,capture:true,promotion:cr===promotionRank});
+        }else if(state.ep===to){
+          moves.push({from,to,capture:true,enPassant:true});
+        }
+      }
+    }
+
+    if(type==='N'){
+      for(const [df,dr] of [[1,2],[2,1],[2,-1],[1,-2],[-1,-2],[-2,-1],[-2,1],[-1,2]]){
+        const nf=f+df,nr=r+dr;
+        if(!inside(nf,nr)) continue;
+        const to=idx(nf,nr), target=state.board[to];
+        if(!target || colorOf(target)!==color){
+          moves.push({from,to,capture:!!target});
+        }
+      }
+    }
+
+    if(type==='B'){
+      addSlideMoves(state,from,moves,[[1,1],[1,-1],[-1,1],[-1,-1]]);
+    }
+
+    if(type==='R'){
+      addSlideMoves(state,from,moves,[[1,0],[-1,0],[0,1],[0,-1]]);
+    }
+
+    if(type==='Q'){
+      addSlideMoves(state,from,moves,[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]);
+    }
+
+    if(type==='K'){
+      for(let df=-1;df<=1;df++){
+        for(let dr=-1;dr<=1;dr++){
+          if(!df&&!dr) continue;
+          const nf=f+df,nr=r+dr;
+          if(!inside(nf,nr)) continue;
+          const to=idx(nf,nr),target=state.board[to];
+          if(!target || colorOf(target)!==color){
+            moves.push({from,to,capture:!!target});
+          }
+        }
+      }
+
+      // Rochade
+      if(color==='w' && from===parseSquare('e1') && !inCheck(state,'w')){
+        if(state.castling.includes('K') &&
+           state.board[parseSquare('h1')]==='R' &&
+           !state.board[parseSquare('f1')] &&
+           !state.board[parseSquare('g1')] &&
+           !isSquareAttacked(state,parseSquare('f1'),'b') &&
+           !isSquareAttacked(state,parseSquare('g1'),'b')){
+          moves.push({from,to:parseSquare('g1'),capture:false,castle:'K'});
+        }
+        if(state.castling.includes('Q') &&
+           state.board[parseSquare('a1')]==='R' &&
+           !state.board[parseSquare('d1')] &&
+           !state.board[parseSquare('c1')] &&
+           !state.board[parseSquare('b1')] &&
+           !isSquareAttacked(state,parseSquare('d1'),'b') &&
+           !isSquareAttacked(state,parseSquare('c1'),'b')){
+          moves.push({from,to:parseSquare('c1'),capture:false,castle:'Q'});
+        }
+      }
+
+      if(color==='b' && from===parseSquare('e8') && !inCheck(state,'b')){
+        if(state.castling.includes('k') &&
+           state.board[parseSquare('h8')]==='r' &&
+           !state.board[parseSquare('f8')] &&
+           !state.board[parseSquare('g8')] &&
+           !isSquareAttacked(state,parseSquare('f8'),'w') &&
+           !isSquareAttacked(state,parseSquare('g8'),'w')){
+          moves.push({from,to:parseSquare('g8'),capture:false,castle:'k'});
+        }
+        if(state.castling.includes('q') &&
+           state.board[parseSquare('a8')]==='r' &&
+           !state.board[parseSquare('d8')] &&
+           !state.board[parseSquare('c8')] &&
+           !state.board[parseSquare('b8')] &&
+           !isSquareAttacked(state,parseSquare('d8'),'w') &&
+           !isSquareAttacked(state,parseSquare('c8'),'w')){
+          moves.push({from,to:parseSquare('c8'),capture:false,castle:'q'});
+        }
+      }
+    }
+
+    return moves;
+  }
+
+  function applyMove(state,move,swapTurn=true){
+    const s=cloneState(state);
+    const piece=s.board[move.from];
+    const color=colorOf(piece);
+    const captured=s.board[move.to];
+
+    // En passant
+    if(move.enPassant){
+      const capRank=rankOf(move.to)+(color==='w'?-1:1);
+      s.board[idx(fileOf(move.to),capRank)]=null;
+    }
+
+    s.board[move.to]=piece;
+    s.board[move.from]=null;
+
+    // Rochade: Turm mitbewegen
+    if(move.castle==='K'){
+      s.board[parseSquare('f1')]='R';
+      s.board[parseSquare('h1')]=null;
+    }else if(move.castle==='Q'){
+      s.board[parseSquare('d1')]='R';
+      s.board[parseSquare('a1')]=null;
+    }else if(move.castle==='k'){
+      s.board[parseSquare('f8')]='r';
+      s.board[parseSquare('h8')]=null;
+    }else if(move.castle==='q'){
+      s.board[parseSquare('d8')]='r';
+      s.board[parseSquare('a8')]=null;
+    }
+
+    // Umwandlung: standardmäßig Dame, bei Aufgaben kann eine andere Figur vorgegeben werden.
+    if(move.promotion){
+      const requested=move.promoteTo || (color==='w'?'Q':'q');
+      s.board[move.to]=color==='w' ? requested.toUpperCase() : requested.toLowerCase();
+    }
+
+    // Rochaderechte
+    const from=squareName(move.from);
+    const to=squareName(move.to);
+
+    if(piece==='K'){ removeCastling(s,'K'); removeCastling(s,'Q'); }
+    if(piece==='k'){ removeCastling(s,'k'); removeCastling(s,'q'); }
+    if(piece==='R' && from==='h1') removeCastling(s,'K');
+    if(piece==='R' && from==='a1') removeCastling(s,'Q');
+    if(piece==='r' && from==='h8') removeCastling(s,'k');
+    if(piece==='r' && from==='a8') removeCastling(s,'q');
+
+    if(captured==='R' && to==='h1') removeCastling(s,'K');
+    if(captured==='R' && to==='a1') removeCastling(s,'Q');
+    if(captured==='r' && to==='h8') removeCastling(s,'k');
+    if(captured==='r' && to==='a8') removeCastling(s,'q');
+
+    // En-passant-Zielfeld
+    s.ep=null;
+    if(piece.toUpperCase()==='P' && Math.abs(rankOf(move.to)-rankOf(move.from))===2){
+      const midRank=(rankOf(move.to)+rankOf(move.from))/2;
+      s.ep=idx(fileOf(move.from),midRank);
+    }
+
+    s.halfmove=(piece.toUpperCase()==='P'||captured||move.enPassant)?0:s.halfmove+1;
+    if(color==='b') s.fullmove++;
+
+    if(swapTurn) s.turn=enemy(s.turn);
+    return s;
+  }
+
+  function legalMovesFrom(state,from){
+    const piece=state.board[from];
+    if(!piece || colorOf(piece)!==state.turn) return [];
+    const color=colorOf(piece);
+
+    return pseudoMovesFrom(state,from).filter(move=>{
+      const next=applyMove(state,move,false);
+      return !inCheck(next,color);
+    });
+  }
+
+  function allLegalMoves(state){
+    const list=[];
+    for(let i=0;i<64;i++){
+      if(colorOf(state.board[i])===state.turn){
+        list.push(...legalMovesFrom(state,i));
+      }
+    }
+    return list;
+  }
+
+  function moveNotation(state,move){
+    const piece=state.board[move.from];
+    const prefix=LETTER[piece];
+    const sep=move.capture?'x':'-';
+    return prefix + squareName(move.from) + sep + squareName(move.to) + (move.promotion?'=D':'');
+  }
+
+  function notationToLegalMove(state,text){
+    const clean=text.trim();
+    const match=clean.match(/^([KDTLS]?)([a-h][1-8])([-x])([a-h][1-8])(=D)?$/);
+    if(!match) return {error:'syntax'};
+
+    const [,letter,fromSq,sep,toSq,promo] = match;
+    const from=parseSquare(fromSq), to=parseSquare(toSq);
+    const piece=state.board[from];
+
+    if(!piece || colorOf(piece)!==state.turn) return {error:'semantic'};
+
+    if(LETTER[piece]!==letter) return {error:'semantic'};
+
+    const legal=legalMovesFrom(state,from);
+    const chosen=legal.find(m=>{
+      if(m.to!==to) return false;
+      if((sep==='x')!==!!m.capture) return false;
+      if(m.promotion && promo!=='=D') return false;
+      if(!m.promotion && promo) return false;
+      return true;
+    });
+
+    if(!chosen) return {error:'semantic'};
+    return {move:chosen};
+  }
+
+  function createBoardRenderer(el, getState, opts={}){
+    let selected=null;
+    let legalTargets=[];
+
+    function setHover(piece){
+      if(!opts.hoverEl) return;
+      opts.hoverEl.textContent = piece ? (LETTER[piece] || '–') : '–';
+      opts.hoverEl.classList.toggle('empty', !piece || !LETTER[piece]);
+    }
+
+    function render(){
+      const state=getState();
+      el.innerHTML='';
+
+      for(let i=0;i<64;i++){
+        const r=Math.floor(i/8), f=i%8;
+        const sq=document.createElement('div');
+        sq.className='square '+(((r+f)%2===0)?'light':'dark');
+
+        if(selected===i) sq.classList.add('selected');
+
+        const legal=legalTargets.find(m=>m.to===i);
+        if(legal){
+          sq.classList.add('legal');
+          if(legal.capture) sq.classList.add('capture');
+        }
+
+        if(f===0){
+          const c=document.createElement('span');
+          c.className='coord rank';
+          c.textContent=8-r;
+          sq.appendChild(c);
+        }
+        if(r===7){
+          const c=document.createElement('span');
+          c.className='coord file';
+          c.textContent='abcdefgh'[f];
+          sq.appendChild(c);
+        }
+
+        const piece=state.board[i];
+        if(piece){
+          const p=document.createElement('div');
+          p.className='piece';
+          p.textContent=SYMBOLS[piece];
+
+          p.addEventListener('mouseenter',()=>setHover(piece));
+          p.addEventListener('mouseleave',()=>setHover(null));
+
+          if(opts.interactive){
+            p.draggable=true;
+            p.addEventListener('dragstart',e=>{
+              if(opts.isLocked && opts.isLocked()){
+                e.preventDefault();
+                return;
+              }
+              if(colorOf(piece)!==state.turn){
+                e.preventDefault();
+                return;
+              }
+              selected=i;
+              legalTargets=legalMovesFrom(state,i);
+              e.dataTransfer.setData('text/plain',String(i));
+              render();
+            });
+          }
+
+          sq.appendChild(p);
+        }
+
+        if(opts.interactive){
+          sq.addEventListener('dragover',e=>e.preventDefault());
+          sq.addEventListener('drop',e=>{
+            e.preventDefault();
+            if(opts.isLocked && opts.isLocked()) return;
+            const from=Number(e.dataTransfer.getData('text/plain'));
+            const move=legalMovesFrom(getState(),from).find(m=>m.to===i);
+            if(move){
+              selected=null;
+              legalTargets=[];
+              opts.onMove(move);
+            }else{
+              selected=null;
+              legalTargets=[];
+              render();
+            }
+          });
+
+          sq.addEventListener('click',()=>{
+            if(opts.isLocked && opts.isLocked()) return;
+            const current=getState();
+            if(selected===null){
+              if(current.board[i] && colorOf(current.board[i])===current.turn){
+                selected=i;
+                legalTargets=legalMovesFrom(current,i);
+                render();
+              }
+            }else{
+              const move=legalTargets.find(m=>m.to===i);
+              if(move){
+                selected=null;
+                legalTargets=[];
+                opts.onMove(move);
+              }else if(current.board[i] && colorOf(current.board[i])===current.turn){
+                selected=i;
+                legalTargets=legalMovesFrom(current,i);
+                render();
+              }else{
+                selected=null;
+                legalTargets=[];
+                render();
+              }
+            }
+          });
+        }
+
+        el.appendChild(sq);
+      }
+    }
+
+    return {render,clearSelection(){
+      selected=null;
+      legalTargets=[];
+      render();
+    }};
+  }
+
+  // ---------------- Hauptbrett ----------------
+  let mainState=newState();
+  let mainMoves=[];
+  let mainLocked=false;
+
+  const hoverLetter=document.getElementById('hoverLetter');
+  const moveList=document.getElementById('moveList');
+
+  const mainRenderer=createBoardRenderer(
+    document.getElementById('mainBoard'),
+    ()=>mainState,
+    {
+      interactive:true,
+      hoverEl:hoverLetter,
+      isLocked:()=>mainLocked,
+      onMove(move){
+        const notation=moveNotation(mainState,move);
+        mainMoves.push({turn:mainState.turn,text:notation,number:mainState.fullmove});
+        mainState=applyMove(mainState,move,true);
+
+        // Nach fünf vollständigen Zügen (= 10 Halbzügen) endet die freie Spielphase.
+        if(mainMoves.length>=10){
+          mainLocked=true;
+        }
+
+        renderMoveList();
+        mainRenderer.render();
+      }
+    }
+  );
+
+  function renderMoveList(){
+    moveList.innerHTML='';
+    const rows=new Map();
+
+    for(const m of mainMoves){
+      if(!rows.has(m.number)) rows.set(m.number,{w:'',b:''});
+      rows.get(m.number)[m.turn]=m.text;
+    }
+
+    if(!rows.size){
+      const empty=document.createElement('div');
+      empty.style.color='var(--muted)';
+      empty.style.fontSize='.9rem';
+      empty.textContent='Noch kein Zug.';
+      moveList.appendChild(empty);
+      return;
+    }
+
+    for(const [no,row] of rows){
+      const div=document.createElement('div');
+      div.className='move-row';
+      div.innerHTML=`
+        <span class="move-no">${no}.</span>
+        <span class="move">${row.w}</span>
+        <span class="move">${row.b}</span>`;
+      moveList.appendChild(div);
+    }
+
+    if(mainLocked){
+      const stop=document.createElement('div');
+      stop.className='stop-note';
+      stop.textContent='Sehr gut, versuche jetzt die Aufgabe zu beantworten 😉';
+      moveList.appendChild(stop);
+    }
+
+    moveList.scrollTop=moveList.scrollHeight;
+  }
+
+  document.getElementById('resetMain').addEventListener('click',()=>{
+    mainState=newState();
+    mainMoves=[];
+    mainLocked=false;
+    hoverLetter.textContent='–';
+    hoverLetter.classList.add('empty');
+    renderMoveList();
+    mainRenderer.clearSelection();
+  });
+
+  mainRenderer.render();
+  renderMoveList();
+
+  // ---------------- Notations-Aufgabe ----------------
+  // Vollere Stellung: Schwarz besitzt mehrere Nicht-Bauern-Figuren,
+  // die zunächst hinter der eigenen Bauernreihe eingeschlossen sind.
+  // Dadurch kann eine solche Figur nicht sofort geschlagen werden.
+  const challengeInitial=Array(64).fill(null);
+
+  // Schwarz
+  challengeInitial[parseSquare('a8')]='r';
+  challengeInitial[parseSquare('c8')]='b';
+  challengeInitial[parseSquare('d8')]='q';
+  challengeInitial[parseSquare('e8')]='k';
+  challengeInitial[parseSquare('f8')]='b';
+  challengeInitial[parseSquare('h8')]='r';
+  for(const file of 'abcdefgh'){
+    challengeInitial[parseSquare(file+'7')]='p';
+  }
+
+  // Weiß
+  challengeInitial[parseSquare('a1')]='R';
+  challengeInitial[parseSquare('b1')]='N';
+  challengeInitial[parseSquare('c1')]='B';
+  challengeInitial[parseSquare('d1')]='Q';
+  challengeInitial[parseSquare('e1')]='K';
+  challengeInitial[parseSquare('f1')]='B';
+  challengeInitial[parseSquare('g1')]='N';
+  challengeInitial[parseSquare('h1')]='R';
+  for(const file of 'abcdefgh'){
+    challengeInitial[parseSquare(file+'2')]='P';
+  }
+
+  let challengeState=newState(challengeInitial);
+  challengeState.castling='';
+  let challengeDone=false;
+  let challengeMoves=[];
+
+  const challengeInput=document.getElementById('challengeInput');
+  const challengeFeedback=document.getElementById('challengeFeedback');
+  const challengeHistory=document.getElementById('challengeHistory');
+
+  const challengeRenderer=createBoardRenderer(
+    document.getElementById('challengeBoard'),
+    ()=>challengeState,
+    {interactive:false}
+  );
+
+  function renderChallengeHistory(){
+    challengeHistory.innerHTML='';
+
+    const rows=new Map();
+
+    for(const m of challengeMoves){
+      if(!rows.has(m.number)) rows.set(m.number,{w:'',b:''});
+      rows.get(m.number)[m.turn]=m.text;
+    }
+
+    for(const [no,row] of rows){
+      const div=document.createElement('div');
+      div.className='challenge-move-row';
+      div.innerHTML=`
+        <span class="challenge-move-no">${no}.</span>
+        <span class="challenge-move">${row.w}</span>
+        <span class="challenge-move">${row.b}</span>`;
+      challengeHistory.appendChild(div);
+    }
+  }
+
+  function resetChallenge(){
+    challengeState=newState(challengeInitial);
+    challengeState.castling='';
+    challengeDone=false;
+    challengeMoves=[];
+    challengeInput.disabled=false;
+    challengeInput.value='';
+    challengeFeedback.textContent='';
+    challengeFeedback.className='feedback';
+    renderChallengeHistory();
+    challengeRenderer.render();
+  }
+
+  function tryChallengeInput(){
+    if(challengeDone) return;
+
+    const text=challengeInput.value.trim();
+    if(!text) {
+      challengeFeedback.textContent='';
+      challengeFeedback.className='feedback';
+      return;
+    }
+
+    const result=notationToLegalMove(challengeState,text);
+
+    if(result.error==='syntax'){
+      challengeFeedback.textContent='Die Eingabe entspricht noch nicht der erwarteten Notation.';
+      challengeFeedback.className='feedback error';
+      return;
+    }
+
+    if(result.error==='semantic'){
+      challengeFeedback.textContent='Die Eingabe ist aufgebaut wie Schachnotation, lässt sich in dieser Stellung aber nicht ausführen.';
+      challengeFeedback.className='feedback error';
+      return;
+    }
+
+    const move=result.move;
+    const captured=challengeState.board[move.to];
+    const notation=moveNotation(challengeState,move);
+
+    challengeMoves.push({
+      turn: challengeState.turn,
+      number: challengeState.fullmove,
+      text: notation
+    });
+    challengeState=applyMove(challengeState,move,true);
+    challengeRenderer.render();
+    renderChallengeHistory();
+
+    const success=captured && colorOf(captured)==='b' && captured.toUpperCase()!=='P';
+
+    if(success){
+      challengeDone=true;
+      challengeInput.value=notation;
+      challengeInput.disabled=true;
+      challengeFeedback.textContent='Geschafft!';
+      challengeFeedback.className='feedback ok';
+    }else{
+      challengeInput.value='';
+      challengeFeedback.textContent='Zug ausgeführt.';
+      challengeFeedback.className='feedback ok';
+    }
+  }
+
+  challengeInput.addEventListener('input',()=>{
+    // Sobald eine vollständige, legale Notation entstanden ist, wird sie ausgeführt.
+    const text=challengeInput.value.trim();
+    const parsed=notationToLegalMove(challengeState,text);
+    if(parsed.move){
+      tryChallengeInput();
+    }else if(text.length>=5){
+      if(parsed.error==='syntax'){
+        challengeFeedback.textContent='Die Eingabe entspricht noch nicht der erwarteten Notation.';
+        challengeFeedback.className='feedback error';
+      }else{
+        challengeFeedback.textContent='Die Eingabe ist aufgebaut wie Schachnotation, lässt sich in dieser Stellung aber nicht ausführen.';
+        challengeFeedback.className='feedback error';
+      }
+    }else{
+      challengeFeedback.textContent='';
+      challengeFeedback.className='feedback';
+    }
+  });
+
+  document.getElementById('resetChallenge').addEventListener('click',resetChallenge);
+
+
+  // ---------------- Zusatz: verkürzte Schachnotation ----------------
+  // In der Anzeige werden deutsche Figurenbuchstaben verwendet:
+  // K König, D Dame, T Turm, L Läufer, S Springer. Bauern erhalten keinen Buchstaben.
+
+  function boardFromPieces(pieces){
+    const b=Array(64).fill(null);
+    for(const [sq,piece] of Object.entries(pieces)){
+      b[parseSquare(sq)]=piece;
+    }
+    return b;
+  }
+
+  const basicVariants=[
+    {
+      title:'Kurznotation nachsetzen',
+      board:[...startBoard],
+      castling:'KQkq',
+      moves:[
+        {san:'e4',from:'e2',to:'e4'},
+        {san:'e5',from:'e7',to:'e5'},
+        {san:'Sf3',from:'g1',to:'f3'},
+        {san:'Sc6',from:'b8',to:'c6'},
+        {san:'Lb5',from:'f1',to:'b5'},
+        {san:'a6',from:'a7',to:'a6'}
+      ]
+    },
+    {
+      title:'Kurznotation nachsetzen',
+      board:[...startBoard],
+      castling:'KQkq',
+      moves:[
+        {san:'d4',from:'d2',to:'d4'},
+        {san:'d5',from:'d7',to:'d5'},
+        {san:'c4',from:'c2',to:'c4'},
+        {san:'e6',from:'e7',to:'e6'},
+        {san:'Sc3',from:'b1',to:'c3'},
+        {san:'Sf6',from:'g8',to:'f6'}
+      ]
+    },
+    {
+      title:'Kurznotation nachsetzen',
+      board:[...startBoard],
+      castling:'KQkq',
+      moves:[
+        {san:'e4',from:'e2',to:'e4'},
+        {san:'c5',from:'c7',to:'c5'},
+        {san:'Sf3',from:'g1',to:'f3'},
+        {san:'d6',from:'d7',to:'d6'},
+        {san:'d4',from:'d2',to:'d4'},
+        {san:'cxd4',from:'c5',to:'d4'}
+      ]
+    }
+  ];
+
+  const epPuzzle={
+    title:'En passant',
+    board:[...startBoard],
+    castling:'KQkq',
+    moves:[
+      {san:'e4',from:'e2',to:'e4'},
+      {san:'a6',from:'a7',to:'a6'},
+      {san:'e5',from:'e4',to:'e5'},
+      {san:'d5',from:'d7',to:'d5'},
+      {san:'exd6',from:'e5',to:'d6',enPassant:true}
+    ],
+    popup:'ep'
+  };
+
+  const castlePuzzle={
+    title:'Rochade',
+    board:[...startBoard],
+    castling:'KQkq',
+    moves:[
+      {san:'e4',from:'e2',to:'e4'},
+      {san:'e5',from:'e7',to:'e5'},
+      {san:'Sf3',from:'g1',to:'f3'},
+      {san:'Sc6',from:'b8',to:'c6'},
+      {san:'Lc4',from:'f1',to:'c4'},
+      {san:'Sf6',from:'g8',to:'f6'},
+      {san:'0-0',from:'e1',to:'g1',castle:'K'}
+    ]
+  };
+
+  const underpromotionBoard=boardFromPieces({
+    'f5':'K','b2':'B','c3':'B','a1':'R','g1':'R',
+    'a4':'P','b3':'P','c4':'P','d5':'P','e4':'P','g7':'P',
+    'h6':'k','h5':'p','h7':'p','a6':'p','b5':'p','c5':'p','d6':'p','e7':'p','f7':'p',
+    'c6':'b','d7':'r'
+  });
+
+  const promotionPuzzle={
+    title:'Endspiel',
+    board:underpromotionBoard,
+    castling:'',
+    moves:[
+      {san:'Ta2',from:'a1',to:'a2'},
+      {san:'Td8',from:'d7',to:'d8'},
+      {san:'Ta1',from:'a2',to:'a1'},
+      {san:'Td7',from:'d8',to:'d7'},
+      {san:'g8=S#',from:'g7',to:'g8',promotion:true,promoteTo:'N'}
+    ],
+    promotionChoice:true
+  };
+
+  let bonusPuzzles=[
+    basicVariants[Math.floor(Math.random()*basicVariants.length)],
+    epPuzzle,
+    castlePuzzle,
+    promotionPuzzle
+  ];
+
+  let bonusIndex=0;
+  let bonusMoveIndex=0;
+  let bonusState=null;
+  let bonusSelected=null;
+  let pendingPromotion=null;
+
+  const bonusBoardEl=document.getElementById('bonusBoard');
+  const sanLine=document.getElementById('sanLine');
+  const bonusFeedback=document.getElementById('bonusFeedback');
+  const bonusTitle=document.getElementById('bonusTitle');
+  const bonusProgress=document.getElementById('bonusProgress');
+  const bonusNext=document.getElementById('bonusNext');
+  const bonusPrev=document.getElementById('bonusPrev');
+  const bonusForward=document.getElementById('bonusForward');
+  const promotionPicker=document.getElementById('promotionPicker');
+  const epModal=document.getElementById('epModal');
+
+  function currentBonusPuzzle(){
+    return bonusPuzzles[bonusIndex];
+  }
+
+  function resetBonusPuzzle(){
+    const puzzle=currentBonusPuzzle();
+    bonusState=newState(puzzle.board);
+    bonusState.castling=puzzle.castling ?? '';
+    bonusState.turn='w';
+    bonusState.ep=null;
+    bonusState.fullmove=1;
+    bonusMoveIndex=0;
+    bonusSelected=null;
+    pendingPromotion=null;
+    promotionPicker.classList.remove('show');
+    bonusNext.classList.remove('show');
+    bonusFeedback.textContent='Wähle eine Figur und setze den ersten Zug nach.';
+    bonusFeedback.className='bonus-feedback';
+    renderBonus();
+    renderSanLine();
+  }
+
+  function renderSanLine(){
+    const puzzle=currentBonusPuzzle();
+    sanLine.innerHTML='';
+
+    for(let i=0;i<puzzle.moves.length;i+=2){
+      const row=document.createElement('div');
+      row.className='san-row';
+
+      const number=document.createElement('span');
+      number.className='san-number';
+      number.textContent=(Math.floor(i/2)+1)+'.';
+      row.appendChild(number);
+
+      for(let j=0;j<2;j++){
+        const moveIndex=i+j;
+        const slot=document.createElement('span');
+
+        if(moveIndex<puzzle.moves.length){
+          slot.className='san-token';
+          if(moveIndex<bonusMoveIndex) slot.classList.add('done');
+          if(moveIndex===bonusMoveIndex) slot.classList.add('current');
+          slot.textContent=puzzle.moves[moveIndex].san;
+        }
+
+        row.appendChild(slot);
+      }
+
+      sanLine.appendChild(row);
+    }
+
+    bonusTitle.textContent=puzzle.title;
+    bonusProgress.textContent=`${bonusIndex+1} von ${bonusPuzzles.length}`;
+    bonusPrev.disabled = bonusIndex===0;
+    bonusForward.disabled = bonusIndex===bonusPuzzles.length-1;
+  }
+
+  function expectedBonusMove(){
+    return currentBonusPuzzle().moves[bonusMoveIndex] || null;
+  }
+
+  function renderBonus(){
+    bonusBoardEl.innerHTML='';
+
+    for(let i=0;i<64;i++){
+      const r=Math.floor(i/8), f=i%8;
+      const sq=document.createElement('div');
+      sq.className='square '+(((r+f)%2===0)?'light':'dark');
+      if(bonusSelected===i) sq.classList.add('selected');
+
+      if(f===0){
+        const c=document.createElement('span');
+        c.className='coord rank';
+        c.textContent=8-r;
+        sq.appendChild(c);
+      }
+      if(r===7){
+        const c=document.createElement('span');
+        c.className='coord file';
+        c.textContent='abcdefgh'[f];
+        sq.appendChild(c);
+      }
+
+      let piece=bonusState.board[i];
+
+      // Bei einer anstehenden Umwandlung steht der Bauer optisch bereits
+      // auf dem Zielfeld; die Stellung wird erst nach der Auswahl übernommen.
+      if(pendingPromotion){
+        if(i===pendingPromotion.from) piece=null;
+        if(i===pendingPromotion.to) piece=bonusState.board[pendingPromotion.from];
+      }
+
+      if(piece){
+        const p=document.createElement('div');
+        p.className='piece';
+        p.textContent=SYMBOLS[piece];
+
+        // Der optisch vorgezogene Umwandlungsbauer ist nicht mehr verschiebbar.
+        const isPromotionGhost=pendingPromotion && i===pendingPromotion.to;
+        p.draggable=!isPromotionGhost;
+
+        if(!isPromotionGhost){
+          p.addEventListener('dragstart',e=>{
+            bonusSelected=i;
+            e.dataTransfer.setData('text/plain',String(i));
+            renderBonus();
+          });
+        }
+
+        sq.appendChild(p);
+      }
+
+      sq.addEventListener('dragover',e=>e.preventDefault());
+      sq.addEventListener('drop',e=>{
+        e.preventDefault();
+        const from=Number(e.dataTransfer.getData('text/plain'));
+        tryBonusMove(from,i);
+      });
+
+      sq.addEventListener('click',()=>{
+        if(bonusSelected===null){
+          if(piece){
+            bonusSelected=i;
+            bonusFeedback.textContent='Figur ausgewählt.';
+            bonusFeedback.className='bonus-feedback';
+            renderBonus();
+          }
+        }else{
+          const from=bonusSelected;
+          if(from===i){
+            bonusSelected=null;
+            renderBonus();
+          }else{
+            tryBonusMove(from,i);
+          }
+        }
+      });
+
+      bonusBoardEl.appendChild(sq);
+    }
+
+    positionPromotionPicker();
+  }
+
+  function positionPromotionPicker(){
+    if(!pendingPromotion || !promotionPicker.classList.contains('show')) return;
+
+    const width=bonusBoardEl.clientWidth;
+    if(!width) return;
+
+    const square=width/8;
+    const file=fileOf(pendingPromotion.to);
+    const row=8-rankOf(pendingPromotion.to);
+
+    const pickerWidth=174;
+    const pickerHeight=50;
+
+    let x=(file+.5)*square;
+    let y=(row+.5)*square;
+
+    // Das Menü bleibt innerhalb des Brettes und liegt direkt über dem Bauern.
+    x=Math.max(pickerWidth/2+5, Math.min(width-pickerWidth/2-5, x));
+    y=Math.max(pickerHeight/2+5, Math.min(width-pickerHeight/2-5, y));
+
+    promotionPicker.style.left=x+'px';
+    promotionPicker.style.top=y+'px';
+  }
+
+  function findActualExpectedMove(expected){
+    const from=parseSquare(expected.from);
+    const to=parseSquare(expected.to);
+    const legal=legalMovesFrom(bonusState,from);
+    const found=legal.find(m=>m.to===to);
+
+    if(!found) return null;
+
+    if(expected.enPassant) found.enPassant=true;
+    if(expected.castle) found.castle=expected.castle;
+    if(expected.promotion){
+      found.promotion=true;
+      found.promoteTo=expected.promoteTo;
+    }
+    return found;
+  }
+
+  function tryBonusMove(from,to){
+    const expected=expectedBonusMove();
+    if(!expected) return;
+
+    const expectedFrom=parseSquare(expected.from);
+    const expectedTo=parseSquare(expected.to);
+
+    if(from!==expectedFrom || to!==expectedTo){
+      bonusSelected=null;
+      promotionPicker.classList.remove('show');
+      bonusFeedback.textContent='Dieser Zug entspricht noch nicht dem nächsten Eintrag der Notation.';
+      bonusFeedback.className='bonus-feedback error';
+      renderBonus();
+      return;
+    }
+
+    const actual=findActualExpectedMove(expected);
+    if(!actual){
+      bonusSelected=null;
+      bonusFeedback.textContent='Dieser Zug ist in der Stellung nicht ausführbar.';
+      bonusFeedback.className='bonus-feedback error';
+      renderBonus();
+      return;
+    }
+
+    if(expected.promotion && currentBonusPuzzle().promotionChoice){
+      pendingPromotion=actual;
+      bonusSelected=null;
+      promotionPicker.classList.add('show');
+      bonusFeedback.textContent='In welche Figur soll der Bauer umgewandelt werden?';
+      bonusFeedback.className='bonus-feedback';
+      renderBonus();
+      return;
+    }
+
+    executeBonusMove(actual);
+  }
+
+  function executeBonusMove(move){
+    bonusState=applyMove(bonusState,move,true);
+    bonusMoveIndex++;
+    bonusSelected=null;
+    pendingPromotion=null;
+    promotionPicker.classList.remove('show');
+    renderBonus();
+    renderSanLine();
+
+    if(bonusMoveIndex>=currentBonusPuzzle().moves.length){
+      bonusFeedback.textContent='Richtig – Aufgabe gelöst.';
+      bonusFeedback.className='bonus-feedback ok';
+
+      if(currentBonusPuzzle().popup==='ep'){
+        epModal.classList.add('show');
+      }
+
+      if(bonusIndex<bonusPuzzles.length-1){
+        bonusNext.textContent='Nächste Aufgabe';
+        bonusNext.classList.add('show');
+      }else{
+        bonusNext.classList.remove('show');
+        bonusFeedback.textContent='Richtig – alle Zusatzaufgaben gelöst. ♟';
+      }
+    }else{
+      bonusFeedback.textContent='Richtig. Setze jetzt den nächsten Zug.';
+      bonusFeedback.className='bonus-feedback ok';
+    }
+  }
+
+  promotionPicker.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(!pendingPromotion) return;
+      const chosen=btn.dataset.promote;
+      const expected=expectedBonusMove();
+
+      if(chosen!==expected.promoteTo){
+        bonusFeedback.textContent='Diese Umwandlung entspricht nicht der angegebenen Notation.';
+        bonusFeedback.className='bonus-feedback error';
+        return;
+      }
+
+      pendingPromotion.promoteTo=chosen;
+      executeBonusMove(pendingPromotion);
+    });
+  });
+
+  bonusPrev.addEventListener('click',()=>{
+    if(bonusIndex<=0) return;
+    bonusIndex--;
+    resetBonusPuzzle();
+  });
+
+  bonusForward.addEventListener('click',()=>{
+    if(bonusIndex>=bonusPuzzles.length-1) return;
+    bonusIndex++;
+    resetBonusPuzzle();
+  });
+
+  bonusNext.addEventListener('click',()=>{
+    if(bonusIndex>=bonusPuzzles.length-1) return;
+    bonusIndex++;
+    resetBonusPuzzle();
+  });
+
+  window.addEventListener('resize',positionPromotionPicker);
+
+  document.getElementById('closeEpModal').addEventListener('click',()=>{
+    epModal.classList.remove('show');
+  });
+
+  epModal.addEventListener('click',e=>{
+    if(e.target===epModal) epModal.classList.remove('show');
+  });
+
+  resetBonusPuzzle();
+
+
+  resetChallenge();
+})();
+</script>
+</body>
+</html>
