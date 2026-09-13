@@ -1,0 +1,942 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>05 Unüberwachtes Lernen</title>
+<style>
+  :root{
+    --bg:#e7edf1;
+    --panel:#ffffff;
+    --panel-soft:#f3f6f8;
+    --text:#111c25;
+    --muted:#596875;
+    --line:#aebbc5;
+    --line-dark:#6f7f8c;
+    --accent:#18354b;
+    --accent-2:#dce7ee;
+    --accent-3:#eef4f7;
+    --danger:#c83d3d;
+    --ok:#24704d;
+    --warn:#8a6118;
+    --shadow:0 7px 22px rgba(26,42,54,.09);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;scroll-snap-type:y proximity}
+  body{
+    margin:0;
+    font-family:Inter,Segoe UI,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+  }
+  button{font:inherit}
+  img{max-width:100%}
+
+  .chapter{
+    min-height:100vh;
+    scroll-snap-align:start;
+    padding:68px 24px 54px;
+  }
+  .chapter:nth-of-type(even){background:#f0f4f6}
+  .chapter-inner{max-width:1280px;margin:0 auto}
+
+  .chapter-nav{
+    position:fixed;
+    z-index:50;
+    top:0;left:0;right:0;
+    height:48px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:7px;
+    background:rgba(238,243,246,.94);
+    border-bottom:1px solid #bdc8d0;
+    backdrop-filter:blur(8px);
+  }
+  .chapter-nav a{
+    text-decoration:none;
+    color:#53626e;
+    font-size:12px;
+    font-weight:750;
+    padding:6px 10px;
+    border-radius:999px;
+    border:1px solid transparent;
+  }
+  .chapter-nav a:hover{background:#fff;border-color:#b9c5cd;color:var(--accent)}
+  .chapter-nav .num{font-weight:850;color:var(--accent)}
+
+  h1{font-size:27px;line-height:1.12;margin:0 0 7px;font-weight:780;letter-spacing:-.025em}
+  h2{font-size:21px;line-height:1.2;margin:0 0 8px;font-weight:760;letter-spacing:-.015em}
+  h3{font-size:16px;margin:0 0 6px}
+  p{line-height:1.48}
+  .intro{margin:0;font-size:14px;color:var(--muted)}
+  .eyebrow{margin:0 0 5px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:850;color:#586774}
+
+  .intro-box,
+  .task-box,
+  .read-box,
+  .hefter-box,
+  .final-box,
+  .concept-box{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:11px;
+  }
+  .intro-box{padding:15px 17px;margin-bottom:16px;border-left:5px solid var(--accent)}
+  .intro-box.with-copy-mark{position:relative;padding-right:128px}
+  .intro-box.with-copy-mark .hefter-inline{position:absolute;right:16px;top:50%;transform:translateY(-50%)}
+  .task-box{padding:13px 15px;border-left:5px solid var(--accent);position:relative}
+  .read-box{padding:14px 16px;border-left:5px solid #7e8e99}
+  .hefter-box{padding:15px 76px 15px 16px;border:2px solid #7b8a95;position:relative;background:#fbfcfd}
+  .concept-box{padding:16px;border-top:4px solid var(--accent)}
+  .task-box p,.read-box p,.hefter-box p,.final-box p,.concept-box p{margin:0}
+  .task-box strong{font-size:15px}
+  .hint{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+  .small{font-size:12px;color:var(--muted)}
+
+  .hefter-mark{
+    position:absolute;
+    top:50%;right:14px;
+    transform:translateY(-50%);
+    width:48px;
+    text-align:center;
+    color:var(--muted);
+    font-size:9px;
+    font-weight:700;
+  }
+  .hefter-mark img{width:34px;height:34px;object-fit:contain;display:block;margin:0 auto 3px}
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    box-shadow:var(--shadow);
+  }
+
+  /* ---------- Einstieg ---------- */
+  .workspace{
+    display:grid;
+    grid-template-columns:minmax(0,1.12fr) minmax(390px,.88fr);
+    gap:16px;
+    align-items:start;
+  }
+  .viz{padding:14px}
+  .panel-title{font-size:11px;font-weight:850;letter-spacing:.075em;text-transform:uppercase;color:#475663;margin:0 0 10px}
+
+  .tabs{
+    display:flex;
+    gap:6px;
+    padding:4px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:var(--panel-soft);
+  }
+  .tab{
+    flex:1;
+    min-width:0;
+    border:0;
+    border-radius:7px;
+    background:transparent;
+    color:#3f4f5c;
+    padding:8px 9px;
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .tab:hover{background:#e3e9ed}
+  .tab.active{background:var(--accent);color:#fff;box-shadow:0 2px 7px rgba(24,53,75,.18)}
+
+  .chart-wrap{
+    position:relative;
+    height:430px;
+    margin-top:12px;
+    padding:18px 22px 48px 62px;
+    border:1px solid #c5d0d7;
+    border-radius:10px;
+    background:#fbfcfd;
+  }
+  .chart{
+    position:relative;
+    width:100%;height:100%;
+    border-left:2px solid #253642;
+    border-bottom:2px solid #253642;
+    background-image:
+      linear-gradient(to right,rgba(35,52,66,.09) 1px,transparent 1px),
+      linear-gradient(to top,rgba(35,52,66,.09) 1px,transparent 1px);
+    background-size:20% 20%;
+  }
+  .axis-x,.axis-y{position:absolute;font-size:12px;color:#263743;font-weight:750}
+  .axis-x{left:56%;bottom:9px;transform:translateX(-50%)}
+  .axis-y{left:9px;top:49%;transform:rotate(-90deg) translateX(-50%);transform-origin:left top;white-space:nowrap}
+  .axis-ticks-x,.axis-ticks-y{position:absolute;pointer-events:none;font-size:10px;color:#52616d;font-variant-numeric:tabular-nums}
+  .axis-ticks-x{left:62px;right:22px;bottom:29px;height:14px}
+  .axis-ticks-y{left:34px;top:18px;bottom:48px;width:25px}
+  .tick-x{position:absolute;transform:translateX(-50%);bottom:0}
+  .tick-y{position:absolute;transform:translateY(50%);right:0}
+  .point{
+    position:absolute;
+    width:46px;height:46px;
+    border-radius:50%;overflow:hidden;
+    border:2px solid #fff;
+    box-shadow:0 0 0 1px #667783,0 2px 8px rgba(0,0,0,.2);
+    transform:translate(-50%,50%);
+    background:#fff;
+  }
+  .point img{width:100%;height:100%;object-fit:cover;display:block}
+
+  .sorting-card{padding:14px;min-height:527px}
+  .sort-tabs{margin-bottom:12px}
+  .sort-panel{display:none}
+  .sort-panel.active{display:block}
+
+  .board{
+    border:1px solid var(--line-dark);
+    border-radius:11px;
+    padding:12px;
+    background:#f8fafb;
+  }
+  .board.solved{border-color:#5c9677;background:#f4faf6}
+  .board-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:9px}
+  .board-head strong{font-size:13px}
+  .status{font-size:11px;color:var(--muted);white-space:nowrap}
+  .board.solved .status{color:var(--ok);font-weight:750}
+
+  .pool,.dropzone{
+    min-height:88px;
+    border:1px dashed #8e9ca7;
+    border-radius:9px;
+    padding:8px;
+    display:flex;
+    gap:7px;
+    flex-wrap:wrap;
+    align-content:flex-start;
+    background:#fff;
+  }
+  .pool{margin-bottom:11px;min-height:132px}
+  .groups{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .group-label{font-size:12px;font-weight:850;color:#293b48;margin:0 2px 5px}
+
+  .creature{
+    width:49px;height:49px;
+    border-radius:50%;overflow:hidden;
+    border:3px solid transparent;
+    box-shadow:0 1px 4px rgba(0,0,0,.14);
+    cursor:grab;background:#fff;
+    transition:border-color .15s,box-shadow .15s,opacity .15s;
+  }
+  .creature img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+  .creature.dragging{opacity:.4}
+  .creature.wrong{border-color:var(--danger);box-shadow:0 0 0 3px rgba(200,61,61,.14)}
+
+  .unlock{padding:16px 18px;position:relative;margin-top:16px}
+  .locked{opacity:.72}
+  .lock-text{font-size:13px;color:var(--muted);margin:0}
+  .final-task{display:none}
+  .final-task.show{display:block}
+  .final-layout{display:block}
+  .final-box{padding:15px 16px;border-left:5px solid var(--accent)}
+  .legend{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:8px;margin:12px 0 14px}
+  .legend-item{border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:#f6f8f9;font-size:12px}
+  .legend-item strong{display:block;font-size:13px;margin-bottom:2px;color:#173247}
+  .new-creature{display:grid;grid-template-columns:74px minmax(0,1fr);gap:14px;align-items:center;border:1px solid var(--line-dark);border-radius:10px;padding:12px;background:#f8fafb;max-width:720px}
+  .new-creature img{width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #fff;box-shadow:0 0 0 1px #778591,0 2px 7px rgba(0,0,0,.14)}
+  .facts{display:grid;grid-template-columns:repeat(3,minmax(110px,1fr));gap:8px 12px;font-size:13px}
+  .facts div{border-left:2px solid #b9c5cd;padding-left:8px}
+  .facts span{color:var(--muted);font-size:10px;display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em}
+  .answer-line{margin-top:12px!important;font-size:14px;font-weight:750}
+  .task-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+  .hefter-inline{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;color:#4c5e6b;font-size:10px;font-weight:750;background:#eef3f6;border:1px solid #bcc9d1;border-radius:8px;padding:5px 7px}
+  .hefter-inline img{width:25px;height:25px;object-fit:contain}
+
+  .continue-note{display:flex;justify-content:center;margin-top:18px}
+  .continue-note a{font-size:12px;font-weight:750;color:var(--accent);text-decoration:none;border-bottom:1px solid #9eafb9;padding-bottom:2px}
+
+  /* ---------- Erarbeitung ---------- */
+  .cluster-layout{display:grid;grid-template-columns:minmax(360px,.82fr) minmax(520px,1.18fr);gap:16px;align-items:stretch}
+  .cluster-copy{display:grid;gap:12px}
+  .cluster-definition{padding:18px 19px;border-left:5px solid var(--accent);background:#fff}
+  .cluster-definition p{margin:0;line-height:1.55}
+  .cluster-definition .lead{font-size:15px}
+  .cluster-definition .mini{margin-top:10px;color:var(--muted);font-size:12px}
+  .rotation-card{padding:14px;display:flex;flex-direction:column}
+  .rotation-stage{position:relative;min-height:430px;flex:1;border:1px solid #c3cfd7;border-radius:11px;background:linear-gradient(#fbfcfd 0 62%,#f5f8fa 62% 100%);overflow:hidden}
+  #cluster3dCanvas{width:100%;height:430px;display:block}
+  .rotation-note{font-size:12px;color:var(--muted);margin:9px 2px 0;line-height:1.42}
+  .wide-task{margin-top:16px}
+  .dimension-question{font-size:14px;line-height:1.48}
+  .problem-task{margin-top:14px;padding-right:15px}
+  .problem-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+  .problem-chip{border:1px solid #aebbc5;border-radius:9px;padding:10px;background:#f5f8fa;font-size:12px;font-weight:750;color:#344652}
+
+  /* ---------- Sicherung ---------- */
+  .summary-grid{display:grid;grid-template-columns:minmax(0,.95fr) minmax(460px,1.05fr);gap:18px;align-items:start}
+  .definition{font-size:16px;line-height:1.55}
+  .definition b{color:#15354d}
+  .reflection{padding:17px}
+  .reflection ol{margin:8px 0 0 20px;padding:0}
+  .reflection li{margin:0 0 14px;line-height:1.45;padding-left:4px}
+  .reflection li:last-child{margin-bottom:0}
+  .contrast-line{border-top:1px solid #bdc8d0;margin:13px 0}
+  .summary-note{padding:14px 16px;background:#eef4f7;border:1px solid #adbec9;border-radius:10px;font-size:13px}
+
+  @media (max-width:1000px){
+    .workspace,.cluster-layout,.summary-grid{grid-template-columns:1fr}
+    .sorting-card{min-height:auto}
+    .chart-wrap{height:410px}
+    .chapter{padding-top:66px}
+  }
+  @media (max-width:700px){
+    .chapter{padding:62px 12px 40px}
+    .chapter-nav{justify-content:flex-start;overflow-x:auto;padding:0 10px}
+    .chapter-nav a{white-space:nowrap}
+    .chart-wrap{height:355px;padding-left:46px}
+    .point{width:40px;height:40px}
+    .groups,.two-col,.problem-grid{grid-template-columns:1fr}
+    .legend{grid-template-columns:1fr 1fr}
+    .facts{grid-template-columns:1fr}
+    .hefter-box{padding-right:62px}
+    .cluster-layout{grid-template-columns:1fr}
+    .rotation-stage{min-height:360px}
+    #cluster3dCanvas{height:360px}
+  }
+</style>
+
+<style data-lernportal-navbar-style>
+.lp-navbar {
+    box-sizing: border-box !important;
+    width: min(1180px, calc(100% - 24px)) !important;
+    min-height: 48px !important;
+    margin: 10px auto 14px auto !important;
+    padding: 6px 8px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+
+    position: relative !important;
+    z-index: 2147483000 !important;
+
+    background: rgba(255, 255, 255, 0.96) !important;
+    border: 1px solid #dfe3e8 !important;
+    border-radius: 9px !important;
+    box-shadow: none !important;
+
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+    color: #444a50 !important;
+}
+
+.lp-navbar,
+.lp-navbar * {
+    box-sizing: border-box !important;
+}
+
+.lp-navbar a {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    margin: 0 !important;
+    padding: 7px 10px !important;
+
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 7px !important;
+    box-shadow: none !important;
+
+    color: #444a50 !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    line-height: 1.2 !important;
+    text-decoration: none !important;
+}
+
+.lp-navbar a:hover {
+    background: #f1f3f5 !important;
+    color: dodgerblue !important;
+}
+
+.lp-navbar .lp-home {
+    color: #777c82 !important;
+}
+
+@media (max-width: 700px) {
+    .lp-navbar {
+        width: calc(100% - 16px) !important;
+        margin: 8px auto 10px auto !important;
+    }
+}
+</style>
+
+</head>
+<body>
+
+<nav class="lp-navbar" aria-label="Lernportal-Navigation">
+    <a class="lp-back" href="index.html">&larr; Zur&uuml;ck</a>
+    <a class="lp-home" href="../../index.html">Lernportal</a>
+</nav>
+
+<nav class="chapter-nav" aria-label="Abschnitte">
+  <a href="#entdecken"><span class="num">1</span> Entdecken</a>
+  <a href="#clustering"><span class="num">2</span> Clustering</a>
+  <a href="#sicherung"><span class="num">3</span> Sicherung</a>
+</nav>
+
+<section class="chapter" id="entdecken">
+  <div class="chapter-inner">
+    <section class="intro-box">
+      <p class="eyebrow">1 · Entdecken</p>
+      <h1>Strukturen in Daten</h1>
+      <p class="intro">Zehn unbekannte Tierwesen wurden anhand von drei Merkmalen untersucht. Betrachte die Daten in verschiedenen Kombinationen und finde sinnvolle Gruppen.</p>
+    </section>
+
+    <div class="workspace">
+      <section class="card viz">
+        <p class="panel-title">Datenansicht</p>
+        <div class="tabs" id="graphTabs"></div>
+        <div class="chart-wrap">
+          <div class="axis-y" id="axisY"></div>
+          <div class="axis-ticks-y" id="ticksY"></div>
+          <div class="chart" id="chart"></div>
+          <div class="axis-ticks-x" id="ticksX"></div>
+          <div class="axis-x" id="axisX"></div>
+        </div>
+      </section>
+
+      <section class="card sorting-card">
+        <p class="panel-title">Gruppierung</p>
+        <div class="tabs sort-tabs">
+          <button class="tab active" data-sort-tab="1">Gruppierung 1</button>
+          <button class="tab" data-sort-tab="2">Gruppierung 2</button>
+        </div>
+
+        <div class="sort-panel active" data-sort-panel="1">
+          <div class="task-box" style="margin-bottom:12px">
+            <p><strong>Teile die Wesen in zwei Gruppen.</strong><span class="hint">Ziehe alle Wesen in Gruppe A oder Gruppe B.</span></p>
+          </div>
+          <div class="board" data-board="1">
+            <div class="board-head"><strong>Zuordnung</strong><span class="status">noch nicht vollständig</span></div>
+            <div class="pool" data-zone="pool"></div>
+            <div class="groups">
+              <div>
+                <div class="group-label">Gruppe A</div>
+                <div class="dropzone" data-zone="A"></div>
+              </div>
+              <div>
+                <div class="group-label">Gruppe B</div>
+                <div class="dropzone" data-zone="B"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sort-panel" data-sort-panel="2">
+          <div class="task-box" style="margin-bottom:12px">
+            <p><strong>Finde eine weitere Möglichkeit, die Wesen zu unterteilen.</strong><span class="hint">Ziehe alle Wesen in Gruppe C oder Gruppe D.</span></p>
+          </div>
+          <div class="board" data-board="2">
+            <div class="board-head"><strong>Zuordnung</strong><span class="status">noch nicht vollständig</span></div>
+            <div class="pool" data-zone="pool"></div>
+            <div class="groups">
+              <div>
+                <div class="group-label">Gruppe C</div>
+                <div class="dropzone" data-zone="C"></div>
+              </div>
+              <div>
+                <div class="group-label">Gruppe D</div>
+                <div class="dropzone" data-zone="D"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section class="card unlock locked" id="unlock">
+      <p class="lock-text" id="lockText"><strong>Spoiler:</strong> Weise zuerst alle Wesen in beiden Gruppierungen zu, um die nächste Aufgabe freizuschalten.</p>
+
+      <div class="final-task" id="finalTask">
+        <div class="final-layout">
+          <div class="final-box">
+            <div class="task-heading">
+              <p><strong>Eine Programmiererin gibt den gefundenen Gruppen nun Bedeutungen:</strong></p>
+              <span class="hefter-inline"><img src="img/hefter.png" alt="">Hefteraufgabe</span>
+            </div>
+
+            <div class="legend" aria-label="Legende">
+              <div class="legend-item"><strong>Gruppe A</strong>Fellwesen</div>
+              <div class="legend-item"><strong>Gruppe B</strong>Schuppenwesen</div>
+              <div class="legend-item"><strong>Gruppe C</strong>giftig</div>
+              <div class="legend-item"><strong>Gruppe D</strong>nicht giftig</div>
+            </div>
+
+            <div class="new-creature">
+              <img src="img/NEW.png" alt="neues Wesen">
+              <div class="facts">
+                <div><span>Größe</span>49 cm</div>
+                <div><span>Sozialverhalten</span>8 / 10</div>
+                <div><span>Lebensdauer</span>45 Jahre</div>
+              </div>
+            </div>
+
+            <p class="answer-line">Entscheide, welche Charakteristiken das neue Wesen besitzt. Ordne es dazu jeweils einer Gruppe (A/B und C/D) zu und begründe deine Entscheidung schriftlich.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="continue-note"><a href="#clustering">Was hat die KI dabei eigentlich gemacht? ↓</a></div>
+  </div>
+</section>
+
+<section class="chapter" id="clustering">
+  <div class="chapter-inner">
+    <section class="intro-box">
+      <p class="eyebrow">2 · Clustering</p>
+      <h2>Clustering</h2>
+      <p class="intro">Wie aus Ähnlichkeiten Gruppen entstehen.</p>
+    </section>
+
+    <div class="cluster-layout">
+      <div class="cluster-copy">
+        <div class="cluster-definition card">
+          <p class="lead"><strong>Beim Clustering werden Daten nach Ähnlichkeiten geordnet.</strong> Dafür vergleicht ein Algorithmus die Merkmale der einzelnen Objekte. Objekte mit ähnlichen Merkmalswerten werden zu einem <strong>Cluster</strong> zusammengefasst.</p>
+          <p class="mini">Welche Cluster entstehen, hängt davon ab, welche Merkmale betrachtet werden.</p>
+        </div>
+
+        <div class="task-box dimension-question">
+          <div class="task-heading">
+            <p><strong>Menschen stellen sich Cluster häufig als Gruppen von Punkten vor, die nah beieinander liegen.</strong> Erläutere, warum diese Vorstellung bei Clustern mit vier oder mehr Merkmalen nur schwer umsetzbar ist und wie du stattdessen vorgehen würdest.</p>
+            <span class="hefter-inline"><img src="img/hefter.png" alt="">Hefter</span>
+          </div>
+        </div>
+      </div>
+
+      <section class="card rotation-card">
+        <p class="panel-title">Drei Merkmale gleichzeitig</p>
+        <div class="rotation-stage">
+          <canvas id="cluster3dCanvas" aria-label="Rotierende dreidimensionale Darstellung der Wesen nach Größe, Lebensdauer und Sozialverhalten"></canvas>
+        </div>
+        <p class="rotation-note">Im dreidimensionalen Raum kann jedes Wesen über drei Merkmale positioniert werden. Die Darstellung dreht sich, damit die räumlichen Abstände besser erkennbar werden.</p>
+      </section>
+    </div>
+
+    <div class="task-box problem-task">
+      <div class="task-heading">
+        <div>
+          <p><strong>Bei der automatischen Einteilung von Daten können Probleme auftreten.</strong> Erläutere an einem Beispiel, wodurch eine Gruppierung irreführend sein könnte.</p>
+          <div class="problem-grid" aria-label="Denkanstöße">
+            <div class="problem-chip">Merkmalsauswahl</div>
+            <div class="problem-chip">Grenzfälle / Ausreißer</div>
+            <div class="problem-chip">Anzahl der Cluster</div>
+          </div>
+        </div>
+        <span class="hefter-inline"><img src="img/hefter.png" alt="">Hefter</span>
+      </div>
+    </div>
+
+    <div class="continue-note"><a href="#sicherung">Begriffe sichern und reflektieren ↓</a></div>
+  </div>
+</section>
+
+<section class="chapter" id="sicherung">
+  <div class="chapter-inner">
+    <section class="intro-box with-copy-mark">
+      <p class="eyebrow">3 · Sicherung</p>
+      <h2>Unüberwachtes Lernen</h2>
+      <p class="intro">Die wichtigsten Aussagen aus dem Lernweg.</p>
+      <span class="hefter-inline"><img src="img/hefter.png" alt="">Abschrift</span>
+    </section>
+
+    <div class="summary-grid">
+      <div class="stack">
+        <div class="hefter-box definition">
+          <p><b>Unüberwachtes Lernen</b> ist eine Form des maschinellen Lernens, bei der keine richtigen Ausgaben oder Kategorien vorgegeben werden. Die KI untersucht die Merkmale der Daten selbstständig und sucht darin nach <b>Mustern und Strukturen</b>.</p>
+          <div class="contrast-line"></div>
+          <p><b>Clustering</b> ist eine Möglichkeit des unüberwachten Lernens: Ähnliche Daten werden zu Gruppen zusammengefasst.</p>
+        </div>
+
+        <div class="summary-note"><strong>Merke:</strong> Die KI kennt dabei keine tatsächlichen Kategorien wie „Fellwesen“ oder „Schuppenwesen“. Sie findet Gruppen nur anhand der vorliegenden Merkmale. Erst Menschen deuten, was ein gefundener Cluster inhaltlich bedeuten könnte.</div>
+      </div>
+
+      <section class="card reflection">
+        <p class="panel-title">Reflexion</p>
+        <ol>
+          <li><strong>Erkläre den Unterschied</strong> zwischen überwachtem und unüberwachtem Lernen.</li>
+          <li><strong>Warum können</strong> aus denselben Daten unterschiedliche Cluster entstehen?</li>
+          <li><strong>„Die KI hat drei Gruppen gefunden. Also gibt es in Wirklichkeit drei Arten.“</strong> Nimm Stellung zu dieser Aussage.</li>
+        </ol>
+      </section>
+    </div>
+  </div>
+</section>
+
+<script>
+const creatures = [
+  {id:'A1', size:34, social:3,  life:50},
+  {id:'A2', size:43, social:10, life:57},
+  {id:'A3', size:57, social:8,  life:66},
+  {id:'A4', size:62, social:4,  life:69},
+  {id:'A5', size:46, social:2,  life:60},
+  {id:'B1', size:44, social:9,  life:42},
+  {id:'B2', size:52, social:1,  life:44},
+  {id:'B3', size:63, social:6,  life:50},
+  {id:'B4', size:71, social:5,  life:55},
+  {id:'B5', size:58, social:7,  life:46}
+];
+
+const allIds = creatures.map(c => c.id);
+
+const views = [
+  {name:'Größe × Lebensdauer', x:'size', y:'life', xLabel:'Größe (cm)', yLabel:'Lebensdauer (Jahre)', xRange:[30,75], yRange:[38,72]},
+  {name:'Größe × Sozialverhalten', x:'size', y:'social', xLabel:'Größe (cm)', yLabel:'Sozialverhalten (1–10)', xRange:[30,75], yRange:[0,11]},
+  {name:'Sozialverhalten × Lebensdauer', x:'social', y:'life', xLabel:'Sozialverhalten (1–10)', yLabel:'Lebensdauer (Jahre)', xRange:[0,11], yRange:[38,72]}
+];
+
+const targets = {
+  1: {leftZone:'A', rightZone:'B', left:new Set(['A1','A2','A3','A4','A5'])},
+  2: {leftZone:'C', rightZone:'D', left:new Set(['A1','A2','A5','B1','B2'])}
+};
+
+function renderGraphTabs(){
+  const tabs = document.getElementById('graphTabs');
+  views.forEach((v,i) => {
+    const b = document.createElement('button');
+    b.className = 'tab' + (i===0 ? ' active' : '');
+    b.textContent = v.name;
+    b.addEventListener('click', () => {
+      tabs.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      renderChart(i);
+    });
+    tabs.appendChild(b);
+  });
+}
+
+function renderChart(index){
+  const v = views[index];
+  const chart = document.getElementById('chart');
+  chart.innerHTML = '';
+  document.getElementById('axisX').textContent = v.xLabel;
+  document.getElementById('axisY').textContent = v.yLabel;
+
+  const ticksX = document.getElementById('ticksX');
+  const ticksY = document.getElementById('ticksY');
+  ticksX.innerHTML = '';
+  ticksY.innerHTML = '';
+  const tickCount = 5;
+  const nice = n => Number.isInteger(n) ? String(n) : n.toFixed(1).replace('.', ',');
+  for(let i=0;i<=tickCount;i++){
+    const fx=i/tickCount;
+    const tx=document.createElement('span');
+    tx.className='tick-x';
+    tx.style.left=(fx*100)+'%';
+    tx.textContent=nice(v.xRange[0]+fx*(v.xRange[1]-v.xRange[0]));
+    ticksX.appendChild(tx);
+
+    const ty=document.createElement('span');
+    ty.className='tick-y';
+    ty.style.bottom=(fx*100)+'%';
+    ty.textContent=nice(v.yRange[0]+fx*(v.yRange[1]-v.yRange[0]));
+    ticksY.appendChild(ty);
+  }
+
+  creatures.forEach(c => {
+    const px = (c[v.x] - v.xRange[0]) / (v.xRange[1] - v.xRange[0]) * 100;
+    const py = (c[v.y] - v.yRange[0]) / (v.yRange[1] - v.yRange[0]) * 100;
+    const d = document.createElement('div');
+    d.className = 'point';
+    d.style.left = px + '%';
+    d.style.bottom = py + '%';
+    d.title = `${v.xLabel}: ${c[v.x]} · ${v.yLabel}: ${c[v.y]}`;
+    d.innerHTML = `<img src="img/${c.id}.png" alt="Wesen ${c.id}">`;
+    chart.appendChild(d);
+  });
+}
+
+function setupSortTabs(){
+  document.querySelectorAll('[data-sort-tab]').forEach(button => {
+    button.addEventListener('click', () => {
+      const id = button.dataset.sortTab;
+      document.querySelectorAll('[data-sort-tab]').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('[data-sort-panel]').forEach(p => p.classList.remove('active'));
+      button.classList.add('active');
+      document.querySelector(`[data-sort-panel="${id}"]`).classList.add('active');
+    });
+  });
+}
+
+function makeCreature(boardNumber,id){
+  const d = document.createElement('div');
+  d.className = 'creature';
+  d.draggable = true;
+  d.dataset.id = id;
+  d.dataset.board = boardNumber;
+  d.innerHTML = `<img src="img/${id}.png" alt="Wesen ${id}">`;
+
+  d.addEventListener('dragstart', e => {
+    d.classList.add('dragging');
+    e.dataTransfer.setData('text/plain', JSON.stringify({board:boardNumber,id}));
+  });
+  d.addEventListener('dragend', () => d.classList.remove('dragging'));
+  return d;
+}
+
+function setupBoards(){
+  document.querySelectorAll('.board').forEach(board => {
+    const n = board.dataset.board;
+    const pool = board.querySelector('[data-zone="pool"]');
+    allIds.forEach(id => pool.appendChild(makeCreature(n,id)));
+
+    board.querySelectorAll('[data-zone]').forEach(zone => {
+      zone.addEventListener('dragover', e => e.preventDefault());
+      zone.addEventListener('drop', e => {
+        e.preventDefault();
+        if(board.classList.contains('solved')) return;
+        let data;
+        try{ data = JSON.parse(e.dataTransfer.getData('text/plain')); }catch{ return; }
+        if(String(data.board) !== String(n)) return;
+        const el = board.querySelector(`.creature[data-id="${data.id}"]`);
+        if(el){
+          zone.appendChild(el);
+          evaluateBoard(board);
+        }
+      });
+    });
+  });
+}
+
+function idsInZone(board,zoneName){
+  return new Set([...board.querySelector(`[data-zone="${zoneName}"]`).children].map(x => x.dataset.id));
+}
+
+function isComplete(board){
+  return board.querySelector('[data-zone="pool"]').children.length === 0;
+}
+
+function clearWrong(board){
+  board.querySelectorAll('.creature').forEach(x => x.classList.remove('wrong'));
+}
+
+function evaluateBoard(board){
+  clearWrong(board);
+  const status = board.querySelector('.status');
+  const n = board.dataset.board;
+
+  if(!isComplete(board)){
+    status.textContent = 'noch nicht vollständig';
+    return;
+  }
+
+  const target = targets[n];
+  const currentLeft = idsInZone(board,target.leftZone);
+  const wrongNormal = [];
+  const wrongSwapped = [];
+
+  allIds.forEach(id => {
+    const shouldBeLeft = target.left.has(id);
+    const isLeft = currentLeft.has(id);
+    if(shouldBeLeft !== isLeft) wrongNormal.push(id);
+    if((!shouldBeLeft) !== isLeft) wrongSwapped.push(id);
+  });
+
+  const solvedNormal = wrongNormal.length === 0;
+  const solvedSwapped = wrongSwapped.length === 0;
+
+  if(solvedNormal || solvedSwapped){
+    // A/B bzw. C/D bleiben für alle Lernenden gleich benannt.
+    if(solvedSwapped){
+      const leftZone = board.querySelector(`[data-zone="${target.leftZone}"]`);
+      const rightZone = board.querySelector(`[data-zone="${target.rightZone}"]`);
+      allIds.forEach(id => {
+        const el = board.querySelector(`.creature[data-id="${id}"]`);
+        (target.left.has(id) ? leftZone : rightZone).appendChild(el);
+      });
+    }
+    board.classList.add('solved');
+    status.textContent = '✓ Zuordnung erkannt';
+    board.querySelectorAll('.creature').forEach(x => x.draggable = false);
+    checkUnlock();
+  } else {
+    const wrong = wrongNormal.length <= wrongSwapped.length ? wrongNormal : wrongSwapped;
+    wrong.forEach(id => board.querySelector(`.creature[data-id="${id}"]`)?.classList.add('wrong'));
+    status.textContent = 'rote Markierungen prüfen';
+  }
+}
+
+function checkUnlock(){
+  const bothSolved = [...document.querySelectorAll('.board')].every(b => b.classList.contains('solved'));
+  if(!bothSolved) return;
+  const unlock = document.getElementById('unlock');
+  unlock.classList.remove('locked');
+  document.getElementById('lockText').style.display = 'none';
+  document.getElementById('finalTask').classList.add('show');
+}
+
+function setupRotating3D(){
+  const canvas=document.getElementById('cluster3dCanvas');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const imgs={};
+
+  creatures.forEach(c=>{
+    const im=new Image();
+    im.src=`img/${c.id}.png`;
+    imgs[c.id]=im;
+  });
+
+  function resize(){
+    const rect=canvas.getBoundingClientRect();
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    canvas.width=Math.max(1,Math.round(rect.width*dpr));
+    canvas.height=Math.max(1,Math.round(rect.height*dpr));
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  resize();
+  window.addEventListener('resize',resize);
+
+  function norm(c){
+    return {
+      x:(c.size-52.5)/22.5,
+      y:(c.life-55)/17,
+      z:(c.social-5.5)/4.5
+    };
+  }
+
+  // Die Darstellung dreht nur sanft hin und her. Dadurch bleibt „vorne/hinten“
+  // lesbar und die Achsen springen nicht auf die jeweils andere Seite.
+  function rotateY(p,a){
+    const ca=Math.cos(a), sa=Math.sin(a);
+    return {x:p.x*ca-p.z*sa, y:p.y, z:p.x*sa+p.z*ca};
+  }
+
+  // Schrägprojektion + leichte Perspektive: z verschiebt Punkte sichtbar nach
+  // hinten rechts und verkleinert sie zugleich.
+  function project(p,w,h){
+    const cx=w*0.47, cy=h*0.50;
+    const unit=Math.min(w,h)*0.255;
+    const perspective=1-0.13*p.z; // hinten kleiner, vorne größer
+    return {
+      x:cx+(p.x*unit + p.z*unit*0.62)*perspective,
+      y:cy-(p.y*unit*1.02 + p.z*unit*0.40)*perspective,
+      z:p.z,
+      perspective
+    };
+  }
+
+  function worldPoint(p,a,w,h){ return project(rotateY(p,a),w,h); }
+
+  function path3(points,a,w,h,stroke,fill,width=1,dash=[]){
+    const q=points.map(p=>worldPoint(p,a,w,h));
+    ctx.save();
+    ctx.beginPath();
+    q.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+    if(points.length>2) ctx.closePath();
+    if(fill){ctx.fillStyle=fill;ctx.fill();}
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.setLineDash(dash);ctx.stroke();}
+    ctx.restore();
+    return q;
+  }
+
+  function drawText(text,p,align='left',alpha=1){
+    ctx.save();
+    ctx.globalAlpha=alpha;
+    ctx.fillStyle='#263743';
+    ctx.font='700 12px Segoe UI, Arial';
+    ctx.textAlign=align;
+    ctx.fillText(text,p.x,p.y);
+    ctx.restore();
+  }
+
+  function drawScene(ts){
+    const w=canvas.clientWidth,h=canvas.clientHeight;
+    ctx.clearRect(0,0,w,h);
+    const a=-0.22 + Math.sin(ts/5200)*0.34;
+    const floorY=-1.15;
+
+    // Bodenfläche: die schräge Fläche macht die Tiefenrichtung sofort sichtbar.
+    const floor=[
+      {x:-1.25,y:floorY,z:-1.25},{x:1.25,y:floorY,z:-1.25},
+      {x:1.25,y:floorY,z:1.25},{x:-1.25,y:floorY,z:1.25}
+    ];
+    path3(floor,a,w,h,'#c5d1d9','rgba(225,233,238,.54)',1.1);
+
+    // Bodengitter. Linien in der Ferne sind bewusst heller.
+    for(let t=-1;t<=1.001;t+=0.5){
+      path3([{x:t,y:floorY,z:-1.2},{x:t,y:floorY,z:1.2}],a,w,h,'rgba(96,118,132,.23)',null,1);
+      path3([{x:-1.2,y:floorY,z:t},{x:1.2,y:floorY,z:t}],a,w,h,
+        `rgba(96,118,132,${0.28-(t+1)*0.055})`,null,1);
+    }
+
+    // Achsen aus einem gemeinsamen Ursprung.
+    const origin={x:-1.1,y:floorY,z:-1.1};
+    const axes=[
+      {label:'Größe',end:{x:1.25,y:floorY,z:-1.1}},
+      {label:'Lebensdauer',end:{x:-1.1,y:1.25,z:-1.1}},
+      {label:'Sozialverhalten',end:{x:-1.1,y:floorY,z:1.25}}
+    ];
+    axes.forEach(ax=>{
+      const q=path3([origin,ax.end],a,w,h,'#405a6b',null,1.8);
+      const e=q[q.length-1];
+      drawText(ax.label,{x:e.x+6,y:e.y-6});
+    });
+
+    const pts=creatures.map(c=>{
+      const r=rotateY(norm(c),a);
+      const q=project(r,w,h);
+      const floorP=project({x:r.x,y:floorY,z:r.z},w,h);
+      return {c,r,q,floorP};
+    }).sort((u,v)=>v.r.z-u.r.z); // hinten zuerst
+
+    // Projektionen auf den Boden helfen, x/z-Lage und Höhe getrennt abzulesen.
+    for(const {r,q,floorP} of pts){
+      const far=(r.z+1)/2;
+      ctx.save();
+      ctx.globalAlpha=0.18+(1-far)*0.16;
+      ctx.setLineDash([3,4]);
+      ctx.strokeStyle='#5d7280';
+      ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(q.x,q.y);ctx.lineTo(floorP.x,floorP.y);ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.ellipse(floorP.x,floorP.y,10*(1-0.10*r.z),4.2*(1-0.10*r.z),0,0,Math.PI*2);
+      ctx.fillStyle='#526a79';ctx.fill();
+      ctx.restore();
+    }
+
+    // Wesen: vorne größer und kontrastreicher, hinten kleiner und blasser.
+    for(const {c,r,q} of pts){
+      const near=(1-r.z)/2; // z=-1 ist vorne
+      const radius=15+near*8;
+      ctx.save();
+      ctx.globalAlpha=0.64+near*0.36;
+      ctx.beginPath();ctx.arc(q.x,q.y,radius+2,0,Math.PI*2);
+      ctx.fillStyle='#fff';ctx.fill();
+      ctx.strokeStyle=near>.55?'#425d6e':'#8797a2';
+      ctx.lineWidth=near>.55?1.8:1.2;ctx.stroke();
+      ctx.beginPath();ctx.arc(q.x,q.y,radius,0,Math.PI*2);ctx.clip();
+      const im=imgs[c.id];
+      if(im.complete && im.naturalWidth) ctx.drawImage(im,q.x-radius,q.y-radius,radius*2,radius*2);
+      else {ctx.fillStyle='#dfe7ec';ctx.fillRect(q.x-radius,q.y-radius,radius*2,radius*2);}
+      ctx.restore();
+    }
+  }
+
+  function frame(ts){
+    drawScene(ts);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+renderGraphTabs();
+renderChart(0);
+setupSortTabs();
+setupBoards();
+setupRotating3D();
+</script>
+</body>
+</html>
