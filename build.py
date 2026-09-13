@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 import shutil
 import re
 import html
@@ -105,17 +105,20 @@ def relative_url(from_dir, target):
 # ============================================================
 
 def process_html(source_file, output_file):
+    """
+    Kopiert eine eigenständige Lernseite und ergänzt ausschließlich
+    die Lernportal-Navigation.
+
+    Wichtig:
+    Die globale kurse.css wird hier bewusst NICHT eingebunden.
+    Dadurch bleibt das CSS der Lernseite vollständig unangetastet.
+    """
     text = source_file.read_text(
         encoding="utf-8",
         errors="replace"
     )
 
     out_dir = output_file.parent
-
-    css_link = relative_url(
-        out_dir,
-        OUTPUT / "kurse.css"
-    )
 
     portal_link = relative_url(
         out_dir,
@@ -124,20 +127,89 @@ def process_html(source_file, output_file):
 
     back_link = "index.html"
 
-    stylesheet = (
-        f'<link rel="stylesheet" '
-        f'href="{css_link}" '
-        f'data-lernportal-style>'
-    )
+    # Ausschließlich für die Navbar geltende Styles.
+    # Alle Selektoren beginnen mit .lp-navbar, damit sie die
+    # eigentliche Lernseite nicht beeinflussen.
+    navbar_style = r'''
+<style data-lernportal-navbar-style>
+.lp-navbar {
+    box-sizing: border-box !important;
+    width: min(1180px, calc(100% - 24px)) !important;
+    min-height: 48px !important;
+    margin: 10px auto 14px auto !important;
+    padding: 6px 8px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+
+    position: relative !important;
+    z-index: 2147483000 !important;
+
+    background: rgba(255, 255, 255, 0.96) !important;
+    border: 1px solid #dfe3e8 !important;
+    border-radius: 9px !important;
+    box-shadow: none !important;
+
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+    color: #444a50 !important;
+}
+
+.lp-navbar,
+.lp-navbar * {
+    box-sizing: border-box !important;
+}
+
+.lp-navbar a {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    margin: 0 !important;
+    padding: 7px 10px !important;
+
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 7px !important;
+    box-shadow: none !important;
+
+    color: #444a50 !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    line-height: 1.2 !important;
+    text-decoration: none !important;
+}
+
+.lp-navbar a:hover {
+    background: #f1f3f5 !important;
+    color: dodgerblue !important;
+}
+
+.lp-navbar .lp-home {
+    color: #777c82 !important;
+}
+
+@media (max-width: 700px) {
+    .lp-navbar {
+        width: calc(100% - 16px) !important;
+        margin: 8px auto 10px auto !important;
+    }
+}
+</style>
+'''
 
     navbar = f'''
-<nav class="lp-navbar">
+<nav class="lp-navbar" aria-label="Lernportal-Navigation">
     <a class="lp-back" href="{back_link}">&larr; Zur&uuml;ck</a>
     <a class="lp-home" href="{portal_link}">Lernportal</a>
 </nav>
 '''
 
-    # CSS-Link vor </head> einfügen
+    # Nur die gekapselte Navbar-CSS in den <head> einfügen.
     if re.search(
         r"</head\s*>",
         text,
@@ -145,15 +217,15 @@ def process_html(source_file, output_file):
     ):
         text = re.sub(
             r"</head\s*>",
-            stylesheet + "\n</head>",
+            navbar_style + "\n</head>",
             text,
             count=1,
             flags=re.IGNORECASE
         )
     else:
-        text = stylesheet + "\n" + text
+        text = navbar_style + "\n" + text
 
-    # Navbar direkt nach <body>
+    # Navbar direkt nach <body> einfügen.
     body_match = re.search(
         r"<body[^>]*>",
         text,

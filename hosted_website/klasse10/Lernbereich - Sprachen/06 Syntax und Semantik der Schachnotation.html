@@ -641,11 +641,81 @@
     .board-card,.notation-card,.task-card,.challenge-card{border-radius:14px}
   }
 </style>
-<link rel="stylesheet" href="../../kurse.css" data-lernportal-style>
+
+<style data-lernportal-navbar-style>
+.lp-navbar {
+    box-sizing: border-box !important;
+    width: min(1180px, calc(100% - 24px)) !important;
+    min-height: 48px !important;
+    margin: 10px auto 14px auto !important;
+    padding: 6px 8px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+
+    position: relative !important;
+    z-index: 2147483000 !important;
+
+    background: rgba(255, 255, 255, 0.96) !important;
+    border: 1px solid #dfe3e8 !important;
+    border-radius: 9px !important;
+    box-shadow: none !important;
+
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+    color: #444a50 !important;
+}
+
+.lp-navbar,
+.lp-navbar * {
+    box-sizing: border-box !important;
+}
+
+.lp-navbar a {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    margin: 0 !important;
+    padding: 7px 10px !important;
+
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 7px !important;
+    box-shadow: none !important;
+
+    color: #444a50 !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    line-height: 1.2 !important;
+    text-decoration: none !important;
+}
+
+.lp-navbar a:hover {
+    background: #f1f3f5 !important;
+    color: dodgerblue !important;
+}
+
+.lp-navbar .lp-home {
+    color: #777c82 !important;
+}
+
+@media (max-width: 700px) {
+    .lp-navbar {
+        width: calc(100% - 16px) !important;
+        margin: 8px auto 10px auto !important;
+    }
+}
+</style>
+
 </head>
 <body>
 
-<nav class="lp-navbar">
+<nav class="lp-navbar" aria-label="Lernportal-Navigation">
     <a class="lp-back" href="index.html">&larr; Zur&uuml;ck</a>
     <a class="lp-home" href="../../index.html">Lernportal</a>
 </nav>
