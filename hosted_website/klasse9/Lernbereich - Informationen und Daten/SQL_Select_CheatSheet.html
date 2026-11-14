@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>SQL Cheat Sheet - SELECT</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.5;
+      margin: 30px;
+      background: #f7f9fc;
+      color: #1f2937;
+    }
+
+    h1 {
+      text-align: center;
+      color: #1d4ed8;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #4b5563;
+      margin-bottom: 30px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 22px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+      border-left: 6px solid #3b82f6;
+    }
+
+    .card h2 {
+      margin-top: 0;
+      color: #1e3a8a;
+      font-size: 1.2rem;
+    }
+
+    .hint {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin: 12px 0;
+      color: #1e40af;
+    }
+
+    .example {
+      margin-top: 10px;
+      color: #374151;
+    }
+
+    pre {
+      background: #111827;
+      color: #f9fafb;
+      padding: 14px;
+      border-radius: 10px;
+      overflow-x: auto;
+      font-size: 0.95rem;
+    }
+
+    code {
+      font-family: Consolas, monospace;
+    }
+
+    .mini-box {
+      background: #f3f4f6;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-top: 10px;
+    }
+
+    ul {
+      padding-left: 22px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .formula {
+      background: #ecfeff;
+      border: 1px solid #a5f3fc;
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 20px;
+    }
+
+    .warning {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 10px;
+      padding: 14px;
+      color: #991b1b;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 800px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<style data-lernportal-navbar-style>
+.lp-navbar {
+    box-sizing: border-box !important;
+    width: min(1180px, calc(100% - 24px)) !important;
+    min-height: 48px !important;
+    margin: 10px auto 14px auto !important;
+    padding: 6px 8px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+
+    position: relative !important;
+    z-index: 2147483000 !important;
+
+    background: rgba(255, 255, 255, 0.96) !important;
+    border: 1px solid #dfe3e8 !important;
+    border-radius: 9px !important;
+    box-shadow: none !important;
+
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+    color: #444a50 !important;
+}
+
+.lp-navbar,
+.lp-navbar * {
+    box-sizing: border-box !important;
+}
+
+.lp-navbar a {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    margin: 0 !important;
+    padding: 7px 10px !important;
+
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 7px !important;
+    box-shadow: none !important;
+
+    color: #444a50 !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    line-height: 1.2 !important;
+    text-decoration: none !important;
+}
+
+.lp-navbar a:hover {
+    background: #f1f3f5 !important;
+    color: dodgerblue !important;
+}
+
+.lp-navbar .lp-home {
+    color: #777c82 !important;
+}
+
+@media (max-width: 700px) {
+    .lp-navbar {
+        width: calc(100% - 16px) !important;
+        margin: 8px auto 10px auto !important;
+    }
+}
+</style>
+
+</head>
+<body>
+
+<nav class="lp-navbar" aria-label="Lernportal-Navigation">
+    <a class="lp-back" href="index.html">&larr; Zur&uuml;ck</a>
+    <a class="lp-home" href="../../index.html">Lernportal</a>
+</nav>
+
+  <div class="container">
+    <h1>SQL Cheat Sheet: SELECT</h1>
+    <div class="card">
+      <h2>1. Gesamten Inhalt ausgeben</h2>
+      <p>Mit <code>*</code> werden alle Spalten einer Tabelle angezeigt.</p>
+      <pre><code>SELECT *
+FROM pokemon;</code></pre>
+      <p class="example">Beispiel: Alle Pokémon mit allen gespeicherten Informationen anzeigen.</p>
+    </div>
+
+    <div class="card">
+      <h2>2. Nur ausgewählte Spalten anzeigen</h2>
+      <p>Du kannst gezielt nur bestimmte Spalten auswählen.</p>
+      <pre><code>SELECT name_de, kp, angriff
+FROM pokemon;</code></pre>
+      <p class="example">Beispiel: Zeigt nur den deutschen Namen, die KP und den Angriff.</p>
+    </div>
+
+    <div class="card">
+      <h2>3. Genau eine Bedingung angeben</h2>
+      <p>Mit <code>WHERE</code> kannst du Ergebnisse filtern.</p>
+      <pre><code>SELECT name_de, generation
+FROM pokemon
+WHERE generation = 1;</code></pre>
+
+      <div class="mini-box">
+        <b>Wichtige Vergleichsoperatoren:</b>
+        <ul>
+          <li><code>=</code> gleich</li>
+          <li><code>!=</code> ungleich</li>
+          <li><code>&gt;</code> größer als</li>
+          <li><code>&lt;</code> kleiner als</li>
+          <li><code>&gt;=</code> größer oder gleich</li>
+          <li><code>&lt;=</code> kleiner oder gleich</li>
+        </ul>
+      </div>
+
+      <pre><code>SELECT name_de, angriff
+FROM pokemon
+WHERE angriff &gt; 100;</code></pre>
+    </div>
+
+    <div class="card">
+      <h2>4. Bedingung mit LIKE angeben</h2>
+      <p><code>LIKE</code> wird für Suchmuster in Texten verwendet.</p>
+      <pre><code>SELECT name_de
+FROM pokemon
+WHERE name_de LIKE 'P%';</code></pre>
+
+      <div class="mini-box">
+        <b>Platzhalter:</b>
+        <ul>
+          <li><code>%</code> beliebig viele Zeichen</li>
+          <li><code>_</code> genau ein Zeichen</li>
+        </ul>
+      </div>
+
+      <pre><code>SELECT name_de
+FROM pokemon
+WHERE name_de LIKE '%saur';</code></pre>
+
+      <pre><code>SELECT name_de
+FROM pokemon
+WHERE name_de LIKE '_isa%';</code></pre>
+    </div>
+
+    <div class="card">
+      <h2>5. Mehrere Bedingungen verknüpfen</h2>
+      <p>Mehrere Bedingungen können mit <code>AND</code> oder <code>OR</code> verbunden werden.</p>
+
+      <div class="grid">
+        <div>
+          <h3>Mit AND</h3>
+          <pre><code>SELECT name_de, generation, ist_legendaer
+FROM pokemon
+WHERE generation = 1 AND ist_legendaer = 1;</code></pre>
+        </div>
+
+        <div>
+          <h3>Mit OR</h3>
+          <pre><code>SELECT name_de, typ_1, typ_2
+FROM pokemon
+JOIN typen ON pokemon.typen_id = typen.typen_id
+WHERE typ_1 = 'Feuer' OR typ_2 = 'Feuer';</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>6. Ergebnisse sortieren</h2>
+      <p>Mit <code>ORDER BY</code> kannst du die Ausgabe sortieren.</p>
+
+      <pre><code>SELECT name_de, kp
+FROM pokemon
+ORDER BY kp ASC;</code></pre>
+
+      <pre><code>SELECT name_de, kp
+FROM pokemon
+ORDER BY kp DESC;</code></pre>
+
+      <pre><code>SELECT name_de, generation, kp
+FROM pokemon
+ORDER BY generation ASC, kp DESC;</code></pre>
+    </div>
+
+    <div class="card">
+      <h2>7. Fremdschlüssel einer anderen Tabelle nutzen</h2>
+      <p>In der Tabelle <code>pokemon</code> steht nur die <code>typen_id</code>. Die dazugehörigen Typen stehen in der Tabelle <code>typen</code>.</p>
+
+      <div class="hint">
+        Dafür braucht man einen <b>JOIN</b>.
+      </div>
+
+      <pre><code>SELECT name_de, typ_1, typ_2
+FROM pokemon
+JOIN typen ON pokemon.typen_id = typen.typen_id;</code></pre>
+
+      <p class="example">Beispiel: Zeigt zu jedem Pokémon auch die Typen an.</p>
+
+      <pre><code>SELECT name_de, typ_1, typ_2
+FROM pokemon
+JOIN typen ON pokemon.typen_id = typen.typen_id
+WHERE typ_1 = 'Wasser' OR typ_2 = 'Wasser';</code></pre>
+    </div>
+
+    <div class="card">
+      <h2>Grundaufbau eines SELECT-Befehls</h2>
+      <div class="formula">
+        <pre><code>SELECT spalten
+FROM tabelle
+WHERE bedingung
+ORDER BY spalte ASC;</code></pre>
+      </div>
+
+      <div class="mini-box">
+        <b>Reihenfolge beim Schreiben:</b>
+        <ol>
+          <li><code>SELECT</code></li>
+          <li><code>FROM</code></li>
+          <li><code>WHERE</code></li>
+          <li><code>ORDER BY</code></li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Typische Beispiele</h2>
+      <pre><code>SELECT name_de
+FROM pokemon;</code></pre>
+
+      <pre><code>SELECT name_de
+FROM pokemon
+WHERE ist_legendaer = 1;</code></pre>
+
+      <pre><code>SELECT name_de, angriff
+FROM pokemon
+ORDER BY angriff DESC
+LIMIT 10;</code></pre>
+
+      <pre><code>SELECT name_de, typ_1, typ_2
+FROM pokemon
+JOIN typen ON pokemon.typen_id = typen.typen_id
+WHERE typ_1 = 'Pflanze' OR typ_2 = 'Pflanze';</code></pre>
+    </div>
+
+    <div class="warning">
+      <b>Häufige Fehler:</b>
+      <ul>
+        <li>Falscher Tabellenname oder Spaltenname</li>
+        <li>Text ohne Anführungszeichen, z. B. <code>WHERE typ_1 = Feuer</code></li>
+        <li><code>=</code> statt <code>LIKE</code> bei Mustern</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>
