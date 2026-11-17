@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html><head><meta name="generator" content="olat-tinymce-3" />
+
+        <link rel="stylesheet" href="../kurse.css">
+    
+<style data-lernportal-navbar-style>
+.lp-navbar {
+    box-sizing: border-box !important;
+    width: min(1180px, calc(100% - 24px)) !important;
+    min-height: 48px !important;
+    margin: 10px auto 14px auto !important;
+    padding: 6px 8px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+
+    position: relative !important;
+    z-index: 2147483000 !important;
+
+    background: rgba(255, 255, 255, 0.96) !important;
+    border: 1px solid #dfe3e8 !important;
+    border-radius: 9px !important;
+    box-shadow: none !important;
+
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+    color: #444a50 !important;
+}
+
+.lp-navbar,
+.lp-navbar * {
+    box-sizing: border-box !important;
+}
+
+.lp-navbar a {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    margin: 0 !important;
+    padding: 7px 10px !important;
+
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 7px !important;
+    box-shadow: none !important;
+
+    color: #444a50 !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    line-height: 1.2 !important;
+    text-decoration: none !important;
+}
+
+.lp-navbar a:hover {
+    background: #f1f3f5 !important;
+    color: dodgerblue !important;
+}
+
+.lp-navbar .lp-home {
+    color: #777c82 !important;
+}
+
+@media (max-width: 700px) {
+    .lp-navbar {
+        width: calc(100% - 16px) !important;
+        margin: 8px auto 10px auto !important;
+    }
+}
+</style>
+
+</head><body>
+
+<nav class="lp-navbar" aria-label="Lernportal-Navigation">
+    <a class="lp-back" href="index.html">&larr; Zur&uuml;ck</a>
+    <a class="lp-home" href="../../index.html">Lernportal</a>
+</nav>
+<h1>Relationale Datenbanksysteme</h1>
+<h2>Speichern von Daten in Tabellen</h2>
+<p>Du hast sicher erkannt, dass eine <strong>Tabelle</strong> eine besonders einfache und sinnvolle Art ist, Daten darzustellen. Aus diesem Grund benutzen relationale Datenbanken auch als zentrales Konzept Tabellen... und das war es schon fast.</p>
+<div class="def">
+<p>Eine <span style="color: darkred;">relationale Datenbank</span> ist im einfachsten Fall eine <strong>Sammlung von Tabellen</strong>.</p>
+<p>Der Begriff "Relation" stammt aus der Mathematik und meint bestimmte Verbindung von Mengen.</p>
+<div id="merke">
+<p>&nbsp;</p>
+<p>Eine Datenbanktabelle besteht aus mehreren Elementen:</p>
+<ul>
+<li>einem eindeutigen Namen,</li>
+<li>einer Reihe von eindeutig benannten Spalten (<span style="color: darkred;">Attribute</span>),</li>
+<li>einem genau definierten Wertebereich (<span style="color: darkred;">Datentyp</span>) f&uuml;r jedes Attribut (Zahl, Text, Datum, etc.),</li>
+<li>beliebig vielen Zeilen (<span style="color: darkred;">Datens&auml;tze</span>). Jeder Datensatz besitzt Werte in den Attributen.</li>
+</ul>
+<figure><img src="https://www.inf-schule.de/content/3_datenbanksysteme/1_terra/1_relationaledb/2_konzept_tabelle/begriffe_tabelle.svg" width="600" />
+<figcaption>Tabelle mit Begriffen</figcaption>
+</figure>
+<p>&nbsp;</p>
+</div>
+<p><em>Quelle:&nbsp;https://www.inf-schule.de/datenbanksysteme/terra/relationaledb/konzept_tabelle#quelle-inhalt-1, Zugriff 04.09.22 13:50 Uhr</em></p>
+<div id="aufgabe"><details> <summary> Aufgabe 1: </summary>
+<p>Fertige einen Screenshot der Sch&uuml;lerliste an und benenne an diesem: Tabellenname, Attribut, Datensatz, Datenwert.</p>
+</details></div>
+<h1>Datentypen</h1>
+<p>Allen Attributen in einer Datenbank werden Datentypen zugeordnet, damit das System wei&szlig;, wie es mit den Daten umgehen muss.<br /> Ein Computer f&uuml;hrt genau aus, was wir ihm sagen. Wir m&uuml;ssen also unser Ziel vorher durchdenken und planen.</p>
+<div id="merke">
+<p>Datentypen:</p>
+<ul>
+<li>wollen wir ganze Zahlen einspeichern und damit Rechnen verwenden wir <strong>integer</strong></li>
+<li>f&uuml;r Kommazahlen verwenden wir <strong>double</strong> oder <strong>float</strong></li>
+<li>f&uuml;r einzelne Buchstaben verwenden wir <strong>char</strong></li>
+<li>f&uuml;r Liste von Buchstaben verwenden wir <strong>string (im Zusammenhang mit DBS meist varchar genannt)</strong></li>
+<li>f&uuml;r eine Liste aus Zahlen und Buchstaben k&ouml;nnen wir auch den Datentyp <strong>string (varchar)</strong> verwenden</li>
+<li>f&uuml;r Wahrheitswerte wahr/falsch verwenden wir <strong>boolean</strong></li>
+</ul>
+<p>&nbsp;</p>
+</div>
+Beispiel: <br /> Datentyp integer: 5 + 5 = 10 <br /> Datentyp string: 5 + 5 = 55
+<p>&nbsp;</p>
+<div id="aufgabe"><details> <summary> Aufgabe 2: </summary>
+<p>&nbsp;</p>
+<p>Ordne den Datenwerten den korrekten Datentyp zu und speichere einen Screenshot in deinem Hefter.</p>
+<iframe style="border: 0px; width: 600px; height: 500px;" src="https://learningapps.org/watch?v=pud01za3n22" width="300" height="150" allowfullscreen="allowfullscreen"></iframe>
+<p>&nbsp;</p>
+</details></div>
+</div></body></html>
